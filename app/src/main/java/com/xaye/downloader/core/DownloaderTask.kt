@@ -58,7 +58,8 @@ class DownloaderTask(
         Trace.d("download cancelled")
         isCancelled = true //标记为取消
         connectThread?.takeIf { it.isRunning }?.cancel() //如果连接线程正在运行，则取消
-        downloadThreads?.filterNotNull()?.filter { it.isRunning() }?.forEach { it.cancel() } //如果下载线程正在运行，则取消
+        downloadThreads?.filterNotNull()?.filter { it.isRunning() }
+            ?.forEach { it.cancel() } //如果下载线程正在运行，则取消
     }
 
     /*
@@ -142,7 +143,8 @@ class DownloaderTask(
         }
 
         downloadThreads = arrayOfNulls(DownloadConfig.getMaxDownloadThreads())
-        downloadStatus = Array(DownloadConfig.getMaxDownloadThreads()) { DownloadStatus.DOWNLOADING }
+        downloadStatus =
+            Array(DownloadConfig.getMaxDownloadThreads()) { DownloadStatus.DOWNLOADING }
 
         for (i in 0 until DownloadConfig.getMaxDownloadThreads()) {
             startPos = i * block + entry.ranges[i]!!
@@ -154,7 +156,8 @@ class DownloaderTask(
             }
 
             if (startPos < endPos) {
-                downloadThreads!![i] = DownloadThread(entry.url, destFile, i, startPos, endPos, this)
+                downloadThreads!![i] =
+                    DownloadThread(entry.url, destFile, i, startPos, endPos, this)
                 executor.execute(downloadThreads!![i])
             } else {
                 downloadStatus[i] = DownloadStatus.COMPLETED
@@ -179,94 +182,95 @@ class DownloaderTask(
     /*
     *下载进度改变的回调
     * */
+    @Synchronized
     override fun onProgressChanged(index: Int, progress: Int) {
-        synchronized(this) {
-            if (entry.isSupportRange) {
-                val range = entry.ranges[index]!! + progress
-                entry.ranges[index] = range
-            }
+        if (entry.isSupportRange) {
+            val range = entry.ranges[index]!! + progress
+            entry.ranges[index] = range
+        }
 
-            entry.currentLength += progress
+        entry.currentLength += progress
 
-            val stamp = System.currentTimeMillis()
-            if (stamp - lastStamp > 1000) {
-                lastStamp = stamp
-                notifyUpdate(entry, DownloaderService.NOTIFY_UPDATING)
-            }
+        val stamp = System.currentTimeMillis()
+        if (stamp - lastStamp > 1000) {
+            lastStamp = stamp
+            notifyUpdate(entry, DownloaderService.NOTIFY_UPDATING)
         }
     }
 
     /*
     *下载完成的回调
     * */
+    @Synchronized
     override fun onDownloadCompleted(index: Int) {
-        synchronized(this) {
-            Trace.d("onDownloadCompleted index = $index")
 
-            downloadStatus[index] = DownloadStatus.COMPLETED
+        Trace.d("onDownloadCompleted index = $index")
 
-            if (downloadStatus.all { it == DownloadStatus.COMPLETED }) {
-                Trace.e(" onDownloadCompleted  entry.getCurrentLength() = " + entry.currentLength + " , entry.getTotalLength()" + entry.totalLength)
+        downloadStatus[index] = DownloadStatus.COMPLETED
 
-                if (entry.totalLength > 0 && entry.currentLength != entry.totalLength) {
-                    entry.status = DownloadStatus.ERROR
-                    entry.reset()
-                } else {
-                    entry.status = DownloadStatus.COMPLETED
-                    notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
-                }
+        if (downloadStatus.all { it == DownloadStatus.COMPLETED }) {
+            Trace.e(" onDownloadCompleted  entry.getCurrentLength() = " + entry.currentLength + " , entry.getTotalLength()" + entry.totalLength)
+            //异常情况，直接删除文件
+            if (entry.totalLength > 0 && entry.currentLength != entry.totalLength) {
+                entry.status = DownloadStatus.ERROR
+                entry.reset()
+            } else {
+                entry.status = DownloadStatus.COMPLETED
+                notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
             }
         }
+
     }
 
     /*
     *下载错误的回调
     * */
+    @Synchronized
     override fun onDownloadError(index: Int, message: String) {
-        synchronized(this) {
-            Trace.d("onDownloadError message = $message")
+        Trace.d("onDownloadError message = $message")
+        downloadStatus[index] = DownloadStatus.ERROR
 
-            downloadStatus[index] = DownloadStatus.ERROR
-
-            // If one thread encounters an error, cancel all threads
-            downloadThreads?.filterNotNull()?.forEach { it.cancelByError() }
-
-            entry.status = DownloadStatus.ERROR
-            notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
+        downloadStatus.forEachIndexed { i, status ->
+            if (status != DownloadStatus.COMPLETED && status != DownloadStatus.ERROR) {
+                downloadThreads?.get(i)?.cancelByError()
+                return
+            }
         }
+
+        entry.status = DownloadStatus.ERROR
+        notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
     }
 
     /*
     *下载暂停的回调
     * */
+    @Synchronized
     override fun onDownloadPaused(index: Int) {
-        synchronized(this) {
-            Trace.d("onDownloadPaused index = $index")
+        Trace.d("onDownloadPaused index = $index")
 
-            downloadStatus[index] = DownloadStatus.PAUSED
+        downloadStatus[index] = DownloadStatus.PAUSED
 
-            if (downloadStatus.all { it == DownloadStatus.PAUSED || it == DownloadStatus.COMPLETED }) {
-                entry.status = DownloadStatus.PAUSED
-                notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
-            }
+        if (downloadStatus.all { it == DownloadStatus.PAUSED || it == DownloadStatus.COMPLETED }) {
+            entry.status = DownloadStatus.PAUSED
+            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
         }
     }
 
     /*
     *下载取消的回调
     * */
+    @Synchronized
     override fun onDownloadCancelled(index: Int) {
-        synchronized(this) {
-            Trace.d("onDownloadCancelled index = $index")
 
-            downloadStatus[index] = DownloadStatus.CANCELLED
+        Trace.d("onDownloadCancelled index = $index")
 
-            if (downloadStatus.all { it == DownloadStatus.CANCELLED || it == DownloadStatus.COMPLETED }) {
-                entry.status = DownloadStatus.CANCELLED
-                entry.reset()
+        downloadStatus[index] = DownloadStatus.CANCELLED
 
-                notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
-            }
+        if (downloadStatus.all { it == DownloadStatus.CANCELLED || it == DownloadStatus.COMPLETED }) {
+            entry.status = DownloadStatus.CANCELLED
+            entry.reset()
+
+            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
         }
     }
 }

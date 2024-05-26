@@ -1,18 +1,28 @@
 package com.xaye.downloader.notify
 
 import android.content.Context
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Observable
 
 /**
  * Author xaye
  * @date: 2024-05-26 18:22
  */
-class DataChanger private constructor(private val context: Context) : Observable() {
-
+class DataChanger private constructor(private val context: Context) {
     private val operatedEntries = LinkedHashMap<String, DownloadEntry>()
+    private val _entriesLiveData = MutableLiveData<DownloadEntry>()
+    val entriesLiveData: LiveData<DownloadEntry> get() = _entriesLiveData
+    //SupervisorJob()，保证 databaseScope 的生命周期管理，并避免子协程失败影响其他协程
+    private val databaseScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
         private const val TAG = "DataChanger"
@@ -27,47 +37,56 @@ class DataChanger private constructor(private val context: Context) : Observable
     }
 
     fun postStatus(entry: DownloadEntry) {
-        operatedEntries[entry.id] = entry
+        synchronized(operatedEntries) {
+            operatedEntries[entry.id] = entry
+        }
 
-        Thread {
+        databaseScope.launch {
             val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
             val existingDownload = downloadDao.getDownloadById(entry.id)
 
             existingDownload?.let {
-                // 此时 entry 是 ListActivity new 的 pid 为 null 而 existingDownload 是数据库的 pid 不为 null 的情况
-                entry.pid = it.pid  // 需要把 pid 赋值给 entry，有了主键数据库才会执行替换操作！
+                entry.pid = it.pid  // 从数据库中同步PID(如果存在)。room insertOrUpdate功能要确保主键PID
             }
             downloadDao.insertOrUpdate(entry)
 
-            // 获取更新后的所有下载数据，用于调试
-            val datas = downloadDao.getAllDownloads()
-            // Log.d(TAG, "postStatus datas size = ${datas.size}, datas = $datas")
-        }.start()
-
-        setChanged()
-        notifyObservers(entry)
+            // 用主线程上的最新条目更新LiveData
+            withContext(Dispatchers.Main) {
+                _entriesLiveData.value = entry
+            }
+        }
     }
 
-    fun queryAllRecoverableEntries(): ArrayList<DownloadEntry> {
-        return ArrayList<DownloadEntry>().apply {
-            operatedEntries.values.filterTo(this) { it.status == DownloadStatus.PAUSED }
+    fun queryAllRecoverableEntries(): List<DownloadEntry> {
+        return synchronized(operatedEntries) {
+            operatedEntries.values.filter { it.status == DownloadStatus.PAUSED }
         }
     }
 
     fun queryDownloadEntryById(id: String): DownloadEntry? {
-        return operatedEntries[id]
+        return synchronized(operatedEntries) {
+            operatedEntries[id]
+        }
     }
 
     fun addToOperatedEntryMap(id: String, downloadEntry: DownloadEntry) {
-        operatedEntries[id] = downloadEntry
+        synchronized(operatedEntries) {
+            operatedEntries[id] = downloadEntry
+        }
     }
 
     fun containsDownloadEntry(id: String): Boolean {
-        return operatedEntries.containsKey(id)
+        return synchronized(operatedEntries) {
+            operatedEntries.containsKey(id)
+        }
     }
 
     fun deleteDownloadEntry(id: String): Boolean {
-        DownloadDatabase.getInstance(context).downloadEntryDao().deleteDownloadById(id)
-        return operatedEntries.remove(id) != null
+        databaseScope.launch {
+            DownloadDatabase.getInstance(context).downloadEntryDao().deleteDownloadById(id)
+        }
+        return synchronized(operatedEntries) {
+            operatedEntries.remove(id) != null
+        }
     }
 }

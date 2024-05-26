@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
-import com.xaye.downloader.notify.DataWatcher
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.DownloaderManager
 import com.xaye.downloader.utilities.Trace
@@ -17,14 +16,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mDownloaderManager: DownloaderManager
 
     var entry : DownloadEntry? = null
-
-    private val watcher = object : DataWatcher {
-        override fun notifyUpdate(data: DownloadEntry) {
-            entry = data
-            Trace.e(data.toString())
-        }
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,11 +63,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        mDownloaderManager.addObserver(watcher)
+       DownloaderManager.getObserver().observe(this) { data ->
+           entry = data
+           Trace.e(data.toString())
+       }
     }
 
-    override fun onPause() {
-        super.onPause()
-        mDownloaderManager.deleteObserver(watcher)
-    }
 }

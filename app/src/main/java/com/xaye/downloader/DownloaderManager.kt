@@ -3,10 +3,11 @@ package com.xaye.downloader
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.xaye.downloader.core.DownloaderService
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.notify.DataChanger
-import com.xaye.downloader.notify.DataWatcher
 import com.xaye.downloader.utilities.Constants
 
 /**
@@ -69,13 +70,17 @@ object DownloaderManager {
         context.startService(intent)
     }
 
-    fun addObserver(dataWatcher: DataWatcher) {
-        DataChanger.getInstance(context).addObserver(dataWatcher)
+    fun getObserver(): LiveData<DownloadEntry> {
+        return DataChanger.getInstance(context).entriesLiveData
     }
 
-    fun deleteObserver(dataWatcher: DataWatcher) {
-        DataChanger.getInstance(context).deleteObserver(dataWatcher)
-    }
+//    fun addObserver(dataWatcher: DataWatcher) {
+//        DataChanger.getInstance(context).addObserver(dataWatcher)
+//    }
+//
+//    fun deleteObserver(dataWatcher: DataWatcher) {
+//        DataChanger.getInstance(context).deleteObserver(dataWatcher)
+//    }
 
     fun queryDownloadEntry(id: String): DownloadEntry? {
         return DataChanger.getInstance(context).queryDownloadEntryById(id)

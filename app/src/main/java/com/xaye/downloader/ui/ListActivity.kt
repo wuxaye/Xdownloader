@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
-import com.xaye.downloader.notify.DataWatcher
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.DownloaderManager
 import com.xaye.downloader.utilities.Trace
@@ -21,29 +20,6 @@ class ListActivity : AppCompatActivity() {
     lateinit var adapter: ListAdapter
     var mDownloadEntries = arrayListOf<DownloadEntry>()
 
-    private val watcher = object : DataWatcher {
-        override fun notifyUpdate(data: DownloadEntry) {
-            val index = mDownloadEntries.indexOfFirst { it.id == data.id }
-            if (index != -1) {
-                mDownloadEntries[index] = data
-                runOnUiThread{
-                    adapter.notifyItemChanged(index)
-                }
-
-                Log.i("TAG"," watcher  data = ${data.id} 000 thread = "+Thread.currentThread().name)
-            } else {
-                mDownloadEntries.add(data)
-                runOnUiThread {
-                    adapter.notifyItemInserted(mDownloadEntries.size - 1)
-                }
-
-                Log.i("TAG"," watcher data = ${data.id} 111 thread = "+Thread.currentThread().name)
-            }
-
-            Trace.e(data.toString())
-        }
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +42,6 @@ class ListActivity : AppCompatActivity() {
         mDownloadEntries.add(entry6)
 
 
-       // mDownloaderManager = DownloaderManager.getInstance(this)
         DownloaderManager.init(applicationContext)
 
 
@@ -110,11 +85,33 @@ class ListActivity : AppCompatActivity() {
                     Trace.e("获取权限失败")
                 }
             }
-        DownloaderManager.addObserver(watcher)
+
+        DownloaderManager.getObserver().observe(this) { data ->
+
+            val index = mDownloadEntries.indexOfFirst { it.id == data.id }
+            if (index != -1) {
+                mDownloadEntries[index] = data
+                runOnUiThread{
+                    adapter.notifyItemChanged(index)
+                }
+
+                Log.i("TAG"," watcher  data = ${data.id} 000 thread = "+Thread.currentThread().name)
+            } else {
+                mDownloadEntries.add(data)
+                runOnUiThread {
+                    adapter.notifyItemInserted(mDownloadEntries.size - 1)
+                }
+
+                Log.i("TAG"," watcher data = ${data.id} 111 thread = "+Thread.currentThread().name)
+            }
+
+            Trace.e(data.toString())
+        }
+        //DownloaderManager.addObserver(watcher)
     }
 
     override fun onPause() {
         super.onPause()
-        DownloaderManager.deleteObserver(watcher)
+        //DownloaderManager.deleteObserver(watcher)
     }
 }
