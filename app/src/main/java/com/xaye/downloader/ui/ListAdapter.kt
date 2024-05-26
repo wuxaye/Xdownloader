@@ -26,13 +26,17 @@ class ListAdapter(datas: MutableList<DownloadEntry>) : BaseQuickAdapter<Download
 
 
             Trace.d(" list btn_downloader item?.status = ${item?.status}")
-            if (item?.status == DownloadStatus.IDLE) {
-                DownloaderManager.getInstance(context).add(item)
-            } else if (item?.status == DownloadStatus.DOWNLOADING ||
-                item?.status == DownloadStatus.WAITING){
-                DownloaderManager.getInstance(context).pause(item)
-            } else if (item?.status == DownloadStatus.PAUSED){
-                DownloaderManager.getInstance(context).resume(item)
+            when (item?.status) {
+                DownloadStatus.IDLE -> {
+                    DownloaderManager.add(item)
+                }
+                DownloadStatus.DOWNLOADING, DownloadStatus.WAITING -> {
+                    DownloaderManager.pause(item)
+                }
+                DownloadStatus.PAUSED -> {
+                    DownloaderManager.resume(item)
+                }
+                else -> {}
             }
         }
     }

@@ -13,18 +13,14 @@ import com.xaye.downloader.entities.DownloadStatus
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var binding: ActivityMainBinding
+    private lateinit var binding: ActivityMainBinding
     private lateinit var mDownloaderManager: DownloaderManager
 
     var entry : DownloadEntry? = null
 
-    private val watcher = object : DataWatcher() {
+    private val watcher = object : DataWatcher {
         override fun notifyUpdate(data: DownloadEntry) {
             entry = data
-//            if (entry?.status == DownloadStatus.CANCELLED) {
-//                entry = null
-//            }
-
             Trace.e(data.toString())
         }
 
@@ -56,23 +52,22 @@ class MainActivity : AppCompatActivity() {
 //                entry!!.id = "1"
 //            }
 //
-//            mDownloaderManager.add(entry)
+//            DownloaderManager.add(entry)
 
         }
 
         binding.btnPause.setOnClickListener {
             if (entry?.status == DownloadStatus.DOWNLOADING) {
-                mDownloaderManager.pause(entry)
+                //DownloaderManager.pause(entry)
             } else if (entry?.status == DownloadStatus.PAUSED){
-                mDownloaderManager.resume(entry)
+               // DownloaderManager.resume(entry)
             }
         }
 
         binding.btnCancel.setOnClickListener {
-            mDownloaderManager.cancel(entry)
+           // DownloaderManager.cancel(entry)
         }
 
-        mDownloaderManager = DownloaderManager.getInstance(this)
     }
 
     override fun onResume() {

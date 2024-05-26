@@ -21,9 +21,7 @@ class ListActivity : AppCompatActivity() {
     lateinit var adapter: ListAdapter
     var mDownloadEntries = arrayListOf<DownloadEntry>()
 
-    private lateinit var mDownloaderManager: DownloaderManager
-
-    private val watcher = object : DataWatcher() {
+    private val watcher = object : DataWatcher {
         override fun notifyUpdate(data: DownloadEntry) {
             val index = mDownloadEntries.indexOfFirst { it.id == data.id }
             if (index != -1) {
@@ -52,12 +50,12 @@ class ListActivity : AppCompatActivity() {
         binding = ActivityListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val entry1 = DownloadEntry(id = "1", name =  "西瓜视频", url = "http://qn.yingyonghui.com/apk/7092466/992d3dcf9b204b0e6c0bd17c349c3e5c?sign=cc8e454a738ec485d94fb207eda324df&t=6644c2d0&attname=992d3dcf9b204b0e6c0bd17c349c3e5c.apk")
-        val entry2 = DownloadEntry(id = "2", name =  "番茄畅听", url = "http://qn.yingyonghui.com/apk/7091064/2f6fa6102a261dd83226b4e4c69de2c6?sign=f25065fd4ac479b920e1e11cda8b7c1f&t=6644c469&attname=2f6fa6102a261dd83226b4e4c69de2c6.apk")
-        val entry3 = DownloadEntry(id = "3", name =  "脉脉", url = "http://qn.yingyonghui.com/apk/7085719/a5b22937feb201ce11b7dd0742457788?sign=bc98c8f551a6367aa8e5a99b47ec4c4b&t=6644c496&attname=a5b22937feb201ce11b7dd0742457788.apk")
-        val entry4 = DownloadEntry(id = "4", name =  "今日头条", url = "http://qn.yingyonghui.com/apk/7092465/ce257e5f0252ade885314fe9ec44dc77?sign=037a372571fb81f0420ae2dbf860c219&t=6644c4b2&attname=ce257e5f0252ade885314fe9ec44dc77.apk")
-        val entry5 = DownloadEntry(id = "5", name =  "快手", url = "http://qn.yingyonghui.com/apk/7088289/adb0e4241e54de4965d09454f8f4a21a?sign=a3db10453405e6c40f7a73975e8d81f3&t=6644c4e2&attname=adb0e4241e54de4965d09454f8f4a21a.apk")
-        val entry6 = DownloadEntry(id = "6", name =  "还呗", url = "http://qn.yingyonghui.com/apk/7089099/7af5ef9402216dba6f4710a437332fea?sign=8be71f23318892f79ba6ba54d7281f9f&t=6644c4fe&attname=7af5ef9402216dba6f4710a437332fea.apk")
+        val entry1 = DownloadEntry(id = "1", name =  "QQ2024", url = "https://ucdl.25pp.com/fs08/2024/05/22/5/110_716b067b070f1e7351a0ac6a05ced58d.apk")
+        val entry2 = DownloadEntry(id = "2", name =  "酷狗音乐", url = "https://ucdl.25pp.com/fs08/2024/05/15/0/110_c2436d2f687fe8db484798cf2521677b.apk")
+        val entry3 = DownloadEntry(id = "3", name =  "wifi万能钥匙", url = "https://ucdl.25pp.com/fs08/2024/05/25/5/110_f92406c39f6c650cacd67bb10ab8d9bd.apk")
+        val entry4 = DownloadEntry(id = "4", name =  "微信", url = "https://ucdl.25pp.com/fs08/2024/04/25/5/106_62d3b4571e2ad4fcd022dfd3eee40665.apk")
+        val entry5 = DownloadEntry(id = "5", name =  "抖音", url = "https://ucdl.25pp.com/fs08/2024/05/22/10/120_c6207531dcd8af119e769e90fa538ad7.apk")
+        val entry6 = DownloadEntry(id = "6", name =  "快手", url = "https://ucdl.25pp.com/fs08/2024/05/23/7/110_bcf940331a5adbc13b40f7d21b0f2df3.apk")
 
 
         mDownloadEntries.add(entry1)
@@ -68,14 +66,15 @@ class ListActivity : AppCompatActivity() {
         mDownloadEntries.add(entry6)
 
 
-        mDownloaderManager = DownloaderManager.getInstance(this)
+       // mDownloaderManager = DownloaderManager.getInstance(this)
+        DownloaderManager.init(applicationContext)
 
 
         var entry: DownloadEntry? = null
         var realEntry: DownloadEntry? = null
         mDownloadEntries.indices.forEach {
             entry = mDownloadEntries[it]
-            realEntry = mDownloaderManager.queryDownloadEntry(entry?.id)
+            realEntry = DownloaderManager.queryDownloadEntry(entry!!.id)
             if (realEntry != null) {
                 mDownloadEntries.removeAt(it)
                 mDownloadEntries.add(it, realEntry!!)
@@ -88,10 +87,10 @@ class ListActivity : AppCompatActivity() {
 
         binding.btnPauseAll.setOnClickListener {
             if (binding.btnPauseAll.text == "暂停全部") {
-                mDownloaderManager.pauseAll()
+                DownloaderManager.pauseAll()
                 binding.btnPauseAll.text = "恢复全部"
             } else {
-                mDownloaderManager.recoverAll()
+                DownloaderManager.recoverAll()
                 binding.btnPauseAll.text = "暂停全部"
             }
 
@@ -111,11 +110,11 @@ class ListActivity : AppCompatActivity() {
                     Trace.e("获取权限失败")
                 }
             }
-        mDownloaderManager.addObserver(watcher)
+        DownloaderManager.addObserver(watcher)
     }
 
     override fun onPause() {
         super.onPause()
-        mDownloaderManager.deleteObserver(watcher)
+        DownloaderManager.deleteObserver(watcher)
     }
 }

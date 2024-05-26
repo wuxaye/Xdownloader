@@ -29,7 +29,7 @@ class FileUtils {
                 algorithm.update(data)
                 hash = algorithm.digest()
             } catch (e: NoSuchAlgorithmException) {
-                Trace.e(e.message)
+                Trace.e(e.message?:"")
             }
             return hash
         }
