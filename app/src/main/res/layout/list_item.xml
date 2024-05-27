@@ -16,8 +16,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         tools:text="11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
-        android:textSize="12sp"
-
+        android:textSize="10sp"
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

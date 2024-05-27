@@ -29,7 +29,8 @@ data class DownloadEntry(
     var totalLength: Int = 0,
     var isSupportRange: Boolean = false, // 是否支持断点续传
     var ranges : HashMap<Int,Int> = HashMap(),
-    var percent: Int = 0
+    var percent: Int = 0,
+    var speed: Float = 0F //下载速度 剩余时间
 ): Parcelable {
     //constructor():this(null,"","","", DownloadStatus.IDLE,0,0,false, HashMap(),0)
 

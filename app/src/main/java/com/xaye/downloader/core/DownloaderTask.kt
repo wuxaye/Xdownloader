@@ -179,6 +179,11 @@ class DownloaderTask(
         executor.execute(downloadThreads!![0])
     }
 
+
+    var tempBytes = 0L
+    var speed: Float = 0F
+    var progressInvokeTime = System.currentTimeMillis()
+
     /*
     *下载进度改变的回调
     * */
@@ -189,10 +194,19 @@ class DownloaderTask(
             entry.ranges[index] = range
         }
 
+        tempBytes += progress
+        val finalTime = System.currentTimeMillis()
+
         entry.currentLength += progress
 
         val stamp = System.currentTimeMillis()
-        if (stamp - lastStamp > 1000) {
+        //最小间隔500ms 通知一次
+        if (stamp - lastStamp >= 500) {
+            speed = tempBytes.toFloat() / ((finalTime - progressInvokeTime).toFloat())
+            tempBytes = 0L
+            entry.speed = speed
+            progressInvokeTime = System.currentTimeMillis()
+
             lastStamp = stamp
             notifyUpdate(entry, DownloaderService.NOTIFY_UPDATING)
         }
