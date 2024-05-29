@@ -21,7 +21,9 @@ object DownloadConfig {
     private var max_retry_times = 3
 
     init {
-        downloadDir = "${Environment.getExternalStorageDirectory()}/downloads"
+        //安卓11 分区存储 /storage/emulated/0/Download 公用下载目录
+        //在安卓11或以上版本，不能手动在sdcard下创建文件夹
+        downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath
     }
 
     @JvmStatic

@@ -35,6 +35,10 @@ class DownloaderTask(
     private var lastStamp: Long = 0 //上次更新UI的时间戳
     private val destFile: File = DownloadConfig.getDownloadFile(entry.url) //下载文件的目标存储路径
 
+    private var tempBytes = 0L //记录下载的临时字节数
+    private var speed: Float = 0F //下载速度
+    private var progressInvokeTime = System.currentTimeMillis() //上次更新下载进度的时间戳
+
     /*
     *暂停下载
     * */
@@ -141,8 +145,9 @@ class DownloaderTask(
                 entry.ranges[i] = 0
             }
         }
-
+        //初始时都为 null
         downloadThreads = arrayOfNulls(DownloadConfig.getMaxDownloadThreads())
+        //初始时都设置为 DownloadStatus.DOWNLOADING
         downloadStatus =
             Array(DownloadConfig.getMaxDownloadThreads()) { DownloadStatus.DOWNLOADING }
 
@@ -179,11 +184,6 @@ class DownloaderTask(
         executor.execute(downloadThreads!![0])
     }
 
-
-    var tempBytes = 0L
-    var speed: Float = 0F
-    var progressInvokeTime = System.currentTimeMillis()
-
     /*
     *下载进度改变的回调
     * */
@@ -198,6 +198,7 @@ class DownloaderTask(
         val finalTime = System.currentTimeMillis()
 
         entry.currentLength += progress
+        entry.percent = (entry.currentLength.toLong() * 100 / entry.totalLength.toLong()).toInt()
 
         val stamp = System.currentTimeMillis()
         //最小间隔500ms 通知一次

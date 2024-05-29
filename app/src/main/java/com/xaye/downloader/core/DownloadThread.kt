@@ -43,7 +43,7 @@ class DownloadThread(
             val responseCode = connection.responseCode
 
             if (!destFile.parentFile.exists()) {
-                destFile.parentFile.mkdirs() // 创建文件所在的目录
+                destFile.parentFile.mkdirs()
             }
 
             var raf: RandomAccessFile? = null
@@ -94,14 +94,17 @@ class DownloadThread(
                         mStates = DownloadStatus.PAUSED
                         listener.onDownloadPaused(index)
                     }
+
                     isCanceled -> {
                         mStates = DownloadStatus.CANCELLED
                         listener.onDownloadCancelled(index)
                     }
+
                     isError -> {
                         mStates = DownloadStatus.ERROR
                         listener.onDownloadError(index, "cancel manually by error")
                     }
+
                     else -> {
                         mStates = DownloadStatus.COMPLETED
                         listener.onDownloadCompleted(index)
@@ -116,10 +119,12 @@ class DownloadThread(
                         mStates = DownloadStatus.PAUSED
                         listener.onDownloadPaused(index)
                     }
+
                     isCanceled -> {
                         mStates = DownloadStatus.CANCELLED
                         listener.onDownloadCancelled(index)
                     }
+
                     else -> {
                         mStates = DownloadStatus.ERROR
                         listener.onDownloadError(index, e.message!!)
@@ -138,14 +143,16 @@ class DownloadThread(
         Thread.currentThread().interrupt()
     }
 
-    fun isPaused(): Boolean = mStates == DownloadStatus.PAUSED || mStates == DownloadStatus.COMPLETED
+    fun isPaused(): Boolean =
+        mStates == DownloadStatus.PAUSED || mStates == DownloadStatus.COMPLETED
 
     fun cancel() {
         isCanceled = true
         Thread.currentThread().interrupt()
     }
 
-    fun isCancelled(): Boolean = mStates == DownloadStatus.CANCELLED || mStates == DownloadStatus.COMPLETED
+    fun isCancelled(): Boolean =
+        mStates == DownloadStatus.CANCELLED || mStates == DownloadStatus.COMPLETED
 
     fun isError(): Boolean = mStates == DownloadStatus.ERROR
 

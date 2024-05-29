@@ -1,16 +1,17 @@
 package com.xaye.downloader.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter4.BaseQuickAdapter
-import com.chad.library.adapter4.viewholder.QuickViewHolder
 import com.xaye.downloader.DownloaderManager
-import com.xaye.downloader.R
+import com.xaye.downloader.databinding.MissionItemLinearBinding
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.utilities.TextUtil
-import com.xaye.downloader.utilities.Trace
 
 /**
  * @FileName:com.xaye.downloader.ui.ListAdapter.kt
@@ -19,58 +20,151 @@ import com.xaye.downloader.utilities.Trace
  * Created by 11623 on 2024/4/5
  */
 class ListAdapter(datas: MutableList<DownloadEntry>) :
-    BaseQuickAdapter<DownloadEntry, QuickViewHolder>(datas) {
-    override fun onBindViewHolder(holder: QuickViewHolder, position: Int, item: DownloadEntry?) {
+    BaseQuickAdapter<DownloadEntry, ListAdapter.VH>(datas) {
 
-        holder.setText(
-            R.id.tv_name,
-            "${item?.name} is ${item?.status} ${TextUtil.getTotalLengthText(item!!.currentLength.toLong())}/${
-                TextUtil.getTotalLengthText(item!!.totalLength.toLong())
-            }  \n" +
-                    " ${
-                        if (item!!.totalLength != 0)
-                            "${TextUtil.getSpeedText(item!!.speed)}  ${
-                                TextUtil.getTimeLeftText(
-                                    item!!.speed,
-                                    ((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt(),
-                                    item.totalLength.toLong(),
-                                )
-                            }"
-                        else ""
-                    }"
-        )
+    // 自定义ViewHolder类
+    class VH(
+        parent: ViewGroup,
+        val binding: MissionItemLinearBinding = MissionItemLinearBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        ),
+    ) : RecyclerView.ViewHolder(binding.root)
 
-        if (item!!.totalLength != 0) {
-            Trace.e(" ListAdapter  speed:${item!!.speed}  progressPercent:${((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt()}  lengthInBytes:${item.totalLength.toLong()}")
-        }
+//    override fun onBindViewHolder(holder: QuickViewHolder, position: Int, item: DownloadEntry?) {
+//
+//        holder.setText(
+//            R.id.tv_name,
+//            "${item?.name} is ${item?.status} ${TextUtil.getTotalLengthText(item!!.currentLength.toLong())}/${
+//                TextUtil.getTotalLengthText(item!!.totalLength.toLong())
+//            }  \n" +
+//                    " ${
+//                        if (item!!.totalLength != 0)
+//                            "${TextUtil.getSpeedText(item!!.speed)}  ${
+//                                TextUtil.getTimeLeftText(
+//                                    item!!.speed,
+//                                    ((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt(),
+//                                    item.totalLength.toLong(),
+//                                )
+//                            }"
+//                        else ""
+//                    }"
+//        )
+//
+//        if (item!!.totalLength != 0) {
+//            Trace.e(" ListAdapter  speed:${item!!.speed}  progressPercent:${((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt()}  lengthInBytes:${item.totalLength.toLong()}")
+//        }
+//
+//        holder.getView<Button>(R.id.btn_downloader).setOnClickListener {
+//
+//
+//            Trace.d(" list btn_downloader item?.status = ${item?.status}")
+//            when (item?.status) {
+//                DownloadStatus.IDLE -> {
+//                    DownloaderManager.add(item)
+//                }
+//
+//                DownloadStatus.DOWNLOADING, DownloadStatus.WAITING -> {
+//                    DownloaderManager.pause(item)
+//                }
+//
+//                DownloadStatus.PAUSED -> {
+//                    DownloaderManager.resume(item)
+//                }
+//
+//                else -> {}
+//            }
+//        }
+//    }
 
-        holder.getView<Button>(R.id.btn_downloader).setOnClickListener {
-
-
-            Trace.d(" list btn_downloader item?.status = ${item?.status}")
-            when (item?.status) {
-                DownloadStatus.IDLE -> {
-                    DownloaderManager.add(item)
+    @SuppressLint("SetTextI18n")
+    override fun onBindViewHolder(holder: VH, position: Int, item: DownloadEntry?) {
+        if (item != null) {
+            holder.binding.apply {
+                itemName.text = item.name
+                itemSize.text = TextUtil.getTotalLengthText(item.totalLength.toLong())
+                itemStatus.text = when (item.status) {
+                    DownloadStatus.IDLE -> "空闲"
+                    DownloadStatus.DOWNLOADING -> String.format("%.0f%%", item.percent.toFloat())
+                    DownloadStatus.PAUSED -> "暂停中"
+                    DownloadStatus.COMPLETED -> "下载完成"
+                    DownloadStatus.FAILED -> "下载失败"
+                    DownloadStatus.CANCELLED -> "已取消"
+                    DownloadStatus.WAITING -> "等待中"
+                    DownloadStatus.ERROR -> "下载错误"
+                    DownloadStatus.CONNECTING -> "连接中"
                 }
 
-                DownloadStatus.DOWNLOADING, DownloadStatus.WAITING -> {
-                    DownloaderManager.pause(item)
+                when(item.status) {
+                    DownloadStatus.IDLE -> {
+
+                    }
+                    DownloadStatus.DOWNLOADING -> {
+                        itemMore.resume()
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.progress = item.percent.toFloat()
+                        itemSize.text = "${TextUtil.getSpeedText(item.speed)} ${
+                            TextUtil.getTimeLeftText(
+                                item.speed,
+                                item.percent,
+                                item.totalLength.toLong()
+                            )
+                        }"
+                    }
+                    DownloadStatus.PAUSED -> {
+                        itemMore.pause()
+                    }
+                    DownloadStatus.COMPLETED -> {
+                        itemMore.visibility = View.GONE
+                        itemMore.pause()
+                    }
+                    DownloadStatus.FAILED -> {
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.pause()
+                    }
+                    DownloadStatus.CANCELLED -> {
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.pause()
+                    }
+                    DownloadStatus.WAITING -> {
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.pause()
+                    }
+                    DownloadStatus.ERROR -> {
+                        itemSize.text = ""
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.pause()
+
+                    }
+                    DownloadStatus.CONNECTING -> {
+                        itemMore.visibility = View.VISIBLE
+                        itemMore.pause()
+                    }
                 }
 
-                DownloadStatus.PAUSED -> {
-                    DownloaderManager.resume(item)
+                itemMore.setOnClickListener {
+                    when (item.status) {
+                        DownloadStatus.IDLE -> {
+                            DownloaderManager.add(item)
+                        }
+
+                        DownloadStatus.DOWNLOADING, DownloadStatus.WAITING -> {
+                            DownloaderManager.pause(item)
+                        }
+
+                        DownloadStatus.PAUSED -> {
+                            DownloaderManager.resume(item)
+                        }
+
+                        else -> {}
+                    }
                 }
 
-                else -> {}
             }
         }
+
+
     }
 
-    override fun onCreateViewHolder(
-        context: Context,
-        parent: ViewGroup,
-        viewType: Int
-    ): QuickViewHolder {
-        return QuickViewHolder(R.layout.list_item, parent)
-    }
+    override fun onCreateViewHolder(context: Context, parent: ViewGroup, viewType: Int) = VH(parent)
+
 }
