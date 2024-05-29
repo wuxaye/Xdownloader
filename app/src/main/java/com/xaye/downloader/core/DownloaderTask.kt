@@ -229,6 +229,7 @@ class DownloaderTask(
             if (entry.totalLength > 0 && entry.currentLength != entry.totalLength) {
                 entry.status = DownloadStatus.ERROR
                 entry.reset()
+                notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
             } else {
                 entry.status = DownloadStatus.COMPLETED
                 notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
