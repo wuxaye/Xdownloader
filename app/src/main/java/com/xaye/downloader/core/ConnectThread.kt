@@ -34,7 +34,7 @@ class ConnectThread(private val url: String, private val listener: ConnectListen
                 listener.onConnectError("server error responseCode:$responseCode")
             }
 
-            Trace.d("com.xaye.downloader.core.ConnectThread responseCode:$responseCode")
+            Trace.d("ConnectThread responseCode:$responseCode")
 
             isRunning = false
         } catch (e: IOException) {

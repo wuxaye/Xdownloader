@@ -46,9 +46,9 @@ class DownloadThread(
                 destFile.parentFile.mkdirs()
             }
 
-            var raf: RandomAccessFile? = null
-            var fos: FileOutputStream? = null
-            var ins: InputStream? = null
+            val raf: RandomAccessFile?
+            val fos: FileOutputStream?
+            val ins: InputStream?
 
             if (responseCode == HttpURLConnection.HTTP_PARTIAL) {
                 raf = RandomAccessFile(destFile, "rw")

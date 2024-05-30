@@ -11,8 +11,8 @@ import java.io.File
  * Created by 11623 on 2024/5/12
  */
 object DownloadConfig {
-    private var max_download_tasks = 3;
-    private var max_download_threads = 3;
+    private var max_download_tasks = 3
+    private var max_download_threads = 3
     private var downloadDir : String? = null
     private var min_operate_interval = 1000L
     private var recoverDownloadWhenStart = false

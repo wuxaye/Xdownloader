@@ -2,6 +2,8 @@ package com.xaye.downloader.core
 
 import android.os.Handler
 import android.os.Message
+import android.widget.Toast
+import com.xaye.downloader.App
 import com.xaye.downloader.DownloadConfig
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
@@ -10,10 +12,9 @@ import java.io.File
 import java.util.concurrent.ExecutorService
 
 /**
- * Author xaye
- * @date: 2024-05-26 12:02
+ * 测试异常重试
  */
-class DownloaderTask(
+class DownloaderTask2(
     private val entry: DownloadEntry, //下载条目
     private val handler: Handler, //处理下载任务状态的handler
     private val executor: ExecutorService //负责执行下载任务的线程池
@@ -242,21 +243,21 @@ class DownloaderTask(
     /*
     *下载错误的回调
     * */
-    @Synchronized
-    override fun onDownloadError(index: Int, message: String) {
-        Trace.d("onDownloadError message = $message")
-        downloadStatus[index] = DownloadStatus.ERROR
-
-        downloadStatus.forEachIndexed { i, status ->
-            if (status != DownloadStatus.COMPLETED && status != DownloadStatus.ERROR) {
-                downloadThreads?.get(i)?.cancelByError()
-                return
-            }
-        }
-
-        entry.status = DownloadStatus.ERROR
-        notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
-    }
+//    @Synchronized
+//    override fun onDownloadError(index: Int, message: String) {
+//        Trace.d("onDownloadError message = $message")
+//        downloadStatus[index] = DownloadStatus.ERROR
+//
+//        downloadStatus.forEachIndexed { i, status ->
+//            if (status != DownloadStatus.COMPLETED && status != DownloadStatus.ERROR) {
+//                downloadThreads?.get(i)?.cancelByError()
+//                return
+//            }
+//        }
+//
+//        entry.status = DownloadStatus.ERROR
+//        notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
+//    }
 
     /*
     *下载暂停的回调
@@ -288,5 +289,85 @@ class DownloaderTask(
 
             notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
         }
+    }
+
+    //////////////////////////////////下载重试策略//////////////////////////////////
+    private val maxRetryCount = DownloadConfig.getMaxDownloadThreads()
+    private var retryCounts = IntArray(DownloadConfig.getMaxDownloadThreads()) { 0 }
+    private val errorFlags = BooleanArray(DownloadConfig.getMaxDownloadThreads()) { false }
+
+
+    @Synchronized
+    override fun onDownloadError(index: Int, message: String) {
+        Trace.d("onDownloadError message = $message")
+        if (!isPaused && !isCancelled) {
+            retryDownload(index, message)
+        } else {
+            markThreadAsError(index, message)
+        }
+    }
+
+    // 重试下载
+    private fun retryDownload(index: Int, message: String) {
+        if (retryCounts[index] < maxRetryCount) {
+            retryCounts[index]++
+            Trace.d("Retrying download (${retryCounts[index]}/$maxRetryCount) after error: $message")
+
+            // 取消当前线程
+            downloadThreads?.get(index)?.cancelByError()
+            downloadThreads?.set(index, null)
+
+            // 延迟一段时间后重试下载
+            handler.postDelayed({
+                if (entry.isSupportRange) {
+                    restartDownloadThread(index)
+                } else {
+                    startSingleDownload()
+                }
+            }, getRetryDelay(retryCounts[index]))
+        } else {
+            Trace.d("Exceeded max retry count. Download failed for thread $index.")
+            markThreadAsError(index, message)
+        }
+    }
+
+    // 获取重试延迟
+    private fun getRetryDelay(retryCount: Int): Long {
+        return 1000L * retryCount
+    }
+
+    // 重新启动下载线程
+    private fun restartDownloadThread(index: Int) {
+        val block = entry.totalLength / DownloadConfig.getMaxDownloadThreads()
+        val startPos = index * block + entry.ranges[index]!!
+        val endPos = if (index == DownloadConfig.getMaxDownloadThreads() - 1) {
+            entry.totalLength - 1
+        } else {
+            (index + 1) * block - 1
+        }
+
+        if (startPos < endPos) {
+            downloadThreads?.set(
+                index,
+                DownloadThread(entry.url, destFile, index, startPos, endPos, this)
+            )
+            executor.execute(downloadThreads!![index])
+        }
+    }
+
+    // 标记线程为错误状态
+    @Synchronized
+    private fun markThreadAsError(index: Int, message: String) {
+        errorFlags[index] = true
+
+        if (errorFlags.all { it }) {
+            handleDownloadFailure(message)
+        }
+    }
+
+    // 处理下载失败
+    private fun handleDownloadFailure(message: String) {
+        entry.status = DownloadStatus.ERROR
+        notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
     }
 }

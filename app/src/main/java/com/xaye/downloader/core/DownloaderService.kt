@@ -22,7 +22,6 @@ import java.util.concurrent.LinkedBlockingQueue
  */
 class DownloaderService : Service()  {
 
-
     //定义常量
     companion object {
          const val NOTIFY_DOWNLOADING = 0x101
@@ -34,7 +33,7 @@ class DownloaderService : Service()  {
     }
 
     //初始化变量
-    private val mDownloadingTasks = mutableMapOf<String, DownloaderTask>()
+    private val mDownloadingTasks = mutableMapOf<String, DownloaderTask2>()
     private lateinit var mExecutors: ExecutorService
     private lateinit var mDataChanger: DataChanger
     private lateinit var mDatabase: DownloadDatabase
@@ -191,7 +190,7 @@ class DownloaderService : Service()  {
     //开始下载任务
     private fun startDownload(entry: DownloadEntry) {
         //FIXME 切换网络3g 没有内存 ，没有sd卡 等情况，自行实现
-        val task = DownloaderTask(entry, mHandler, mExecutors)
+        val task = DownloaderTask2(entry, mHandler, mExecutors)
         task.start()
         mDownloadingTasks[entry.id] = task
     }
