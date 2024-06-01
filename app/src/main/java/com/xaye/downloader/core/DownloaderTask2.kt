@@ -7,6 +7,7 @@ import com.xaye.downloader.App
 import com.xaye.downloader.DownloadConfig
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
+import com.xaye.downloader.network.DownloadException
 import com.xaye.downloader.utilities.Trace
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -296,22 +297,21 @@ class DownloaderTask2(
     private var retryCounts = IntArray(DownloadConfig.getMaxDownloadThreads()) { 0 }
     private val errorFlags = BooleanArray(DownloadConfig.getMaxDownloadThreads()) { false }
 
-
     @Synchronized
-    override fun onDownloadError(index: Int, message: String) {
-        Trace.d("onDownloadError message = $message")
+    override fun onDownloadError(index: Int, exception: DownloadException) {
+        Trace.d("onDownloadError message = $exception")
         if (!isPaused && !isCancelled) {
-            retryDownload(index, message)
+            retryDownload(index, exception)
         } else {
-            markThreadAsError(index, message)
+            markThreadAsError(index, exception)
         }
     }
 
     // 重试下载
-    private fun retryDownload(index: Int, message: String) {
+    private fun retryDownload(index: Int, exception: DownloadException) {
         if (retryCounts[index] < maxRetryCount) {
             retryCounts[index]++
-            Trace.d("Retrying download (${retryCounts[index]}/$maxRetryCount) after error: $message")
+            Trace.d("Retrying download (${retryCounts[index]}/$maxRetryCount) after error: $exception")
 
             // 取消当前线程
             downloadThreads?.get(index)?.cancelByError()
@@ -327,7 +327,7 @@ class DownloaderTask2(
             }, getRetryDelay(retryCounts[index]))
         } else {
             Trace.d("Exceeded max retry count. Download failed for thread $index.")
-            markThreadAsError(index, message)
+            markThreadAsError(index, exception)
         }
     }
 
@@ -357,17 +357,18 @@ class DownloaderTask2(
 
     // 标记线程为错误状态
     @Synchronized
-    private fun markThreadAsError(index: Int, message: String) {
+    private fun markThreadAsError(index: Int, exception: DownloadException) {
         errorFlags[index] = true
 
         if (errorFlags.all { it }) {
-            handleDownloadFailure(message)
+            handleDownloadFailure(exception)
         }
     }
 
     // 处理下载失败
-    private fun handleDownloadFailure(message: String) {
+    private fun handleDownloadFailure(exception: DownloadException) {
         entry.status = DownloadStatus.ERROR
+        entry.exception = exception
         notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
     }
 }

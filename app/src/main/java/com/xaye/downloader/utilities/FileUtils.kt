@@ -15,7 +15,7 @@ class FileUtils {
         private val HASH_ALGORITHM = "MD5"
         private val RADIX = 10 + 26
 
-        //生成一个基于给定 URL 的 MD5 文件名
+        //生成一个基于给定 URL 的 MD5 文件名，保证每个文件名的唯一性
         fun getMd5FileName(url: String) : String {
             val md5 = getMd5(url.toByteArray())
             val bi = BigInteger(md5).abs()

@@ -1,6 +1,9 @@
 package com.xaye.downloader.core
 
 import com.xaye.downloader.entities.DownloadStatus
+import com.xaye.downloader.network.DownloadException
+import com.xaye.downloader.network.Error
+import com.xaye.downloader.network.ExceptionHandle
 import com.xaye.downloader.utilities.Constants
 import java.io.File
 import java.io.FileOutputStream
@@ -84,7 +87,15 @@ class DownloadThread(
             } else {
                 synchronized(listener) {
                     mStates = DownloadStatus.ERROR
-                    listener.onDownloadError(index, "server error:$responseCode")
+                    listener.onDownloadError(
+                        index,
+                        DownloadException(
+                            Error.SERVER_ERROR.getKey(),
+                            Error.SERVER_ERROR.getValue(),
+                            responseCode.toString(),
+                            null
+                        )
+                    )
                 }
                 return
             }
@@ -102,7 +113,10 @@ class DownloadThread(
 
                     isError -> {
                         mStates = DownloadStatus.ERROR
-                        listener.onDownloadError(index, "cancel manually by error")
+                        listener.onDownloadError(
+                            index,
+                            DownloadException(Error.MANUALLY_ERROR, null)
+                        )
                     }
 
                     else -> {
@@ -127,7 +141,7 @@ class DownloadThread(
 
                     else -> {
                         mStates = DownloadStatus.ERROR
-                        listener.onDownloadError(index, e.message!!)
+                        listener.onDownloadError(index, ExceptionHandle.handleException(e))
                     }
                 }
             }
@@ -166,7 +180,7 @@ class DownloadThread(
     interface DownloadListener {
         fun onProgressChanged(index: Int, progress: Int)
         fun onDownloadCompleted(index: Int)
-        fun onDownloadError(index: Int, message: String)
+        fun onDownloadError(index: Int, exception: DownloadException)
         fun onDownloadPaused(index: Int)
         fun onDownloadCancelled(index: Int)
     }

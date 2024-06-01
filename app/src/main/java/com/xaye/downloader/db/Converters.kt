@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.xaye.downloader.entities.DownloadStatus
+import com.xaye.downloader.network.DownloadException
 
 /**
  * @FileName:com.xaye.downloader.db.DownloadStatusConverter.kt
@@ -30,5 +31,22 @@ class Converters {
         val gson = Gson()
         val type = object : TypeToken<HashMap<Int, Int>>() {}.type
         return gson.fromJson(value, type)
+    }
+
+    @TypeConverter
+    fun fromDownloadException(downloadException: DownloadException?): String? {
+        if (downloadException == null) {
+            return null
+        }
+        return Gson().toJson(downloadException)
+    }
+
+    @TypeConverter
+    fun toDownloadException(value: String?): DownloadException? {
+        if (value == null) {
+            return null
+        }
+        val type = object : TypeToken<DownloadException>() {}.type
+        return Gson().fromJson(value, type)
     }
 }

@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.xaye.downloader.DownloadConfig.getDownloadFile
 import com.xaye.downloader.db.Converters
+import com.xaye.downloader.network.DownloadException
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -21,7 +22,7 @@ data class DownloadEntry(
     @PrimaryKey(autoGenerate = true)
     var pid: Long? = null,
 
-    var id: String,
+    var id: String,//下载任务的唯一ID
     var name: String,
     var url: String,
     var status: DownloadStatus = DownloadStatus.IDLE,
@@ -30,10 +31,9 @@ data class DownloadEntry(
     var isSupportRange: Boolean = false, // 是否支持断点续传
     var ranges : HashMap<Int,Int> = HashMap(),//记录每个线程下载的进度
     var percent: Int = 0,
-    var speed: Float = 0F //下载速度 剩余时间
+    var speed: Float = 0F, //下载速度 剩余时间
+    var exception: DownloadException? = null
 ): Parcelable {
-    //constructor():this(null,"","","", DownloadStatus.IDLE,0,0,false, HashMap(),0)
-
 
     override fun toString(): String {
         return "DownloadEntry :$url is $status with $currentLength/$totalLength"

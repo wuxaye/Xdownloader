@@ -30,52 +30,6 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
         ),
     ) : RecyclerView.ViewHolder(binding.root)
 
-//    override fun onBindViewHolder(holder: QuickViewHolder, position: Int, item: DownloadEntry?) {
-//
-//        holder.setText(
-//            R.id.tv_name,
-//            "${item?.name} is ${item?.status} ${TextUtil.getTotalLengthText(item!!.currentLength.toLong())}/${
-//                TextUtil.getTotalLengthText(item!!.totalLength.toLong())
-//            }  \n" +
-//                    " ${
-//                        if (item!!.totalLength != 0)
-//                            "${TextUtil.getSpeedText(item!!.speed)}  ${
-//                                TextUtil.getTimeLeftText(
-//                                    item!!.speed,
-//                                    ((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt(),
-//                                    item.totalLength.toLong(),
-//                                )
-//                            }"
-//                        else ""
-//                    }"
-//        )
-//
-//        if (item!!.totalLength != 0) {
-//            Trace.e(" ListAdapter  speed:${item!!.speed}  progressPercent:${((item.currentLength.toLong() * 100) / item.totalLength.toLong()).toInt()}  lengthInBytes:${item.totalLength.toLong()}")
-//        }
-//
-//        holder.getView<Button>(R.id.btn_downloader).setOnClickListener {
-//
-//
-//            Trace.d(" list btn_downloader item?.status = ${item?.status}")
-//            when (item?.status) {
-//                DownloadStatus.IDLE -> {
-//                    DownloaderManager.add(item)
-//                }
-//
-//                DownloadStatus.DOWNLOADING, DownloadStatus.WAITING -> {
-//                    DownloaderManager.pause(item)
-//                }
-//
-//                DownloadStatus.PAUSED -> {
-//                    DownloaderManager.resume(item)
-//                }
-//
-//                else -> {}
-//            }
-//        }
-//    }
-
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: VH, position: Int, item: DownloadEntry?) {
         if (item != null) {
@@ -90,7 +44,7 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
                     DownloadStatus.FAILED -> "下载失败"
                     DownloadStatus.CANCELLED -> "已取消"
                     DownloadStatus.WAITING -> "等待中"
-                    DownloadStatus.ERROR -> "下载错误"
+                    DownloadStatus.ERROR -> "下载错误：${item.exception?.errorMsg}"
                     DownloadStatus.CONNECTING -> "连接中"
                 }
 
@@ -161,7 +115,6 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
 
             }
         }
-
 
     }
 
