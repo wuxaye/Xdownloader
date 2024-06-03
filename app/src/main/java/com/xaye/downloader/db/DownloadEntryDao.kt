@@ -17,26 +17,26 @@ import com.xaye.downloader.entities.DownloadStatus
 @Dao
 interface DownloadEntryDao {
     @Query("SELECT * FROM downloads")
-    fun getAllDownloads(): List<DownloadEntry>
+    suspend fun getAllDownloads(): List<DownloadEntry>
 
     @Query("SELECT * FROM downloads WHERE id = :id")
-    fun getDownloadById(id: String): DownloadEntry?
+    suspend fun getDownloadById(id: String): DownloadEntry?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertOrUpdate(downloadEntry: DownloadEntry)
+    suspend fun insertOrUpdate(downloadEntry: DownloadEntry)
 
     @Delete
-    fun deleteDownload(downloadEntry: DownloadEntry)
+    suspend fun deleteDownload(downloadEntry: DownloadEntry): Int
 
     @Query("DELETE FROM downloads WHERE id = :id")
-    fun deleteDownloadById(id: String)
+    suspend fun deleteDownloadById(id: String): Int
 
     @Query("UPDATE downloads SET status = :status WHERE id = :id")
-    fun updateDownloadStatus(id: String, status: DownloadStatus)
+    suspend fun updateDownloadStatus(id: String, status: DownloadStatus)
 
     @Query("UPDATE downloads SET currentLength = :currentLength WHERE id = :id")
-    fun updateDownloadCurrentLength(id: String, currentLength: Int)
+    suspend fun updateDownloadCurrentLength(id: String, currentLength: Int)
 
     @Query("UPDATE downloads SET totalLength = :totalLength WHERE id = :id")
-    fun updateDownloadTotalLength(id: String, totalLength: Int)
+    suspend fun updateDownloadTotalLength(id: String, totalLength: Int)
 }

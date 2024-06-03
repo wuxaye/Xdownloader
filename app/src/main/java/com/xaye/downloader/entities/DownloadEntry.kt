@@ -51,15 +51,3 @@ data class DownloadEntry(
     }
 }
 
-enum class DownloadStatus {
-    IDLE,
-    CONNECTING,
-    DOWNLOADING,
-    PAUSED,
-    COMPLETED,
-    FAILED,
-    CANCELLED,
-    WAITING,
-    ERROR
-}
-

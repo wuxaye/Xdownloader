@@ -14,7 +14,7 @@ import java.io.File
  * Created by 11623 on 2024/4/27
  */
 @Database(entities = [DownloadEntry::class], version = 1, exportSchema = false)
-open abstract class DownloadDatabase : RoomDatabase(){
+abstract class DownloadDatabase : RoomDatabase(){
     abstract fun downloadEntryDao(): DownloadEntryDao
 
     companion object {
@@ -22,7 +22,7 @@ open abstract class DownloadDatabase : RoomDatabase(){
         private var downloadDatabase: DownloadDatabase? = null
 
         @JvmStatic
-        open fun getInstance(context: Context): DownloadDatabase {
+        fun getInstance(context: Context): DownloadDatabase {
             if (downloadDatabase == null) {
                 synchronized(DownloadDatabase::class.java) {
                     if (downloadDatabase == null) {

@@ -1,14 +1,21 @@
 package com.xaye.downloader.core
 
+import android.content.Context
 import android.os.Handler
 import android.os.Message
 import android.widget.Toast
 import com.xaye.downloader.App
 import com.xaye.downloader.DownloadConfig
+import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.network.DownloadException
 import com.xaye.downloader.utilities.Trace
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ExecutorService
 
@@ -18,7 +25,8 @@ import java.util.concurrent.ExecutorService
 class DownloaderTask2(
     private val entry: DownloadEntry, //下载条目
     private val handler: Handler, //处理下载任务状态的handler
-    private val executor: ExecutorService //负责执行下载任务的线程池
+    private val executor: ExecutorService, //负责执行下载任务的线程池
+    private val context: Context
 ) : ConnectThread.ConnectListener, DownloadThread.DownloadListener {
 
     /*
@@ -40,6 +48,9 @@ class DownloaderTask2(
     private var tempBytes = 0L //记录下载的临时字节数
     private var speed: Float = 0F //下载速度
     private var progressInvokeTime = System.currentTimeMillis() //上次更新下载进度的时间戳
+
+    private val taskScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
 
     /*
     *暂停下载
@@ -72,15 +83,39 @@ class DownloaderTask2(
     *开始下载
     * */
     fun start() {
-        if (entry.totalLength > 0) { //如果已知文件总长度，则直接开始下载
-            startDownload()
-        } else { //否则，先连接服务器，获取文件总长度
-            entry.status = DownloadStatus.CONNECTING
-            notifyUpdate(entry, DownloaderService.NOTIFY_CONNECTING)
+        taskScope.launch {
+            if (isDownloadCompleted(entry)) {
+                entry.status = DownloadStatus.COMPLETED
+                notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
+            } else {
+                if (entry.totalLength > 0) { //如果已知文件总长度，则直接开始下载
+                    startDownload()
+                } else { //否则，先连接服务器，获取文件总长度
+                    entry.status = DownloadStatus.CONNECTING
+                    notifyUpdate(entry, DownloaderService.NOTIFY_CONNECTING)
 
-            connectThread = ConnectThread(entry.url, this).also {
-                executor.execute(it)
+                    connectThread = ConnectThread(entry.url, this@DownloaderTask2).also {
+                        executor.execute(it)
+                    }
+                }
             }
+        }
+
+    }
+
+    private suspend fun isDownloadCompleted(entry: DownloadEntry): Boolean {
+        return withContext(Dispatchers.IO) {
+            val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
+            val downloadEntry = downloadDao.getDownloadById(entry.id)
+
+            val file = DownloadConfig.getDownloadFile(entry.url)
+            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}")
+            val currentLength = if (!file.exists()) {
+                0L
+            } else {
+                downloadEntry?.currentLength ?: 0L
+            }
+            file.exists() && currentLength == 0L
         }
     }
 
@@ -88,9 +123,9 @@ class DownloaderTask2(
     *开始下载，分为单线程下载和多线程下载两种情况
     * */
     private fun startDownload() {
-        if (entry.isSupportRange) { //如果服务器支持断点续传，则进行多线程下载
+        if (entry.isSupportRange) {
             startMultiDownload()
-        } else { //否则，进行单线程下载
+        } else {
             startSingleDownload()
         }
     }
@@ -185,6 +220,8 @@ class DownloaderTask2(
         notifyUpdate(entry, DownloaderService.NOTIFY_DOWNLOADING)
 
         downloadThreads = arrayOf(DownloadThread(entry.url, destFile, 0, 0, 0, this))
+
+        downloadStatus = Array(1) { DownloadStatus.DOWNLOADING }
         executor.execute(downloadThreads!![0])
     }
 

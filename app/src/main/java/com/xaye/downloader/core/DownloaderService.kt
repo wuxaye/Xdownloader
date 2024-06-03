@@ -1,10 +1,12 @@
 package com.xaye.downloader.core
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Message
+import com.xaye.downloader.DownloadConfig
 import com.xaye.downloader.DownloadConfig.getMaxDownloadTasks
 import com.xaye.downloader.DownloadConfig.getRecoverDownloadWhenStart
 import com.xaye.downloader.db.DownloadDatabase
@@ -12,6 +14,13 @@ import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utilities.Constants
+import com.xaye.downloader.utilities.Trace
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -20,16 +29,16 @@ import java.util.concurrent.LinkedBlockingQueue
  * Author xaye
  * @date: 2024-05-26 11:05
  */
-class DownloaderService : Service()  {
+class DownloaderService : Service() {
 
     //定义常量
     companion object {
-         const val NOTIFY_DOWNLOADING = 0x101
-         const val NOTIFY_COMPLETED = 0x102
-         const val NOTIFY_UPDATING = 0x103
-         const val NOTIFY_PAUSED_OR_CANCELED = 0x104
-         const val NOTIFY_CONNECTING = 0x105
-         const val NOTIFY_ERROR = 0x106
+        const val NOTIFY_DOWNLOADING = 0x101
+        const val NOTIFY_COMPLETED = 0x102
+        const val NOTIFY_UPDATING = 0x103
+        const val NOTIFY_PAUSED_OR_CANCELED = 0x104
+        const val NOTIFY_CONNECTING = 0x105
+        const val NOTIFY_ERROR = 0x106
     }
 
     //初始化变量
@@ -38,7 +47,8 @@ class DownloaderService : Service()  {
     private lateinit var mDataChanger: DataChanger
     private lateinit var mDatabase: DownloadDatabase
     private val mWaitingQueue = LinkedBlockingQueue<DownloadEntry>()
-    private val mHandler: Handler = object : Handler() {
+    private val mHandler: Handler = @SuppressLint("HandlerLeak")
+    object : Handler() {
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
             when (msg.what) {
@@ -69,45 +79,59 @@ class DownloaderService : Service()  {
 
     //初始化下载任务
     private fun initializeDownload() {
-        Handler().postDelayed({
-            Thread {
-                val entries = mDatabase.downloadEntryDao().getAllDownloads()
-                for (entry in entries) {
-                    if (entry.status == DownloadStatus.DOWNLOADING || entry.status == DownloadStatus.WAITING) {
-                        if (getRecoverDownloadWhenStart()) {
-                            if (entry.isSupportRange) {
-                                entry.status = DownloadStatus.PAUSED
-                            } else {
-                                entry.status = DownloadStatus.IDLE
-                                entry.reset()
-                            }
-                            addDownload(entry)
-                        } else {
-                            if (entry.isSupportRange) {
-                                entry.status = DownloadStatus.PAUSED
-                            } else {
-                                entry.status = DownloadStatus.IDLE
-                                entry.reset()
-                            }
-                            mDatabase.downloadEntryDao().insertOrUpdate(entry)
-                        }
-                    }
-                    mDataChanger.addToOperatedEntryMap(entry.id, entry)
-                }
-            }.start()
-        }, 2000)
+        CoroutineScope(Dispatchers.IO).launch {
+            val entries = mDatabase.downloadEntryDao().getAllDownloads()
+            entries.forEach { entry ->
+                handleEntry(entry)
+                mDataChanger.addToOperatedEntryMap(entry.id, entry)
+            }
+        }
+    }
+
+    // 处理每个条目的函数
+    private suspend fun handleEntry(entry: DownloadEntry) {
+        if (entry.status == DownloadStatus.DOWNLOADING || entry.status == DownloadStatus.WAITING) {
+            if (getRecoverDownloadWhenStart()) {
+                updateEntryForRecovery(entry)
+                addDownload(entry)
+            } else {
+                updateEntryForNonRecovery(entry)
+                mDatabase.downloadEntryDao().insertOrUpdate(entry)
+            }
+        }
+    }
+
+    // 恢复下载的更新操作
+    private fun updateEntryForRecovery(entry: DownloadEntry) {
+        if (entry.isSupportRange) {
+            entry.status = DownloadStatus.PAUSED
+        } else {
+            entry.status = DownloadStatus.IDLE
+            entry.reset()
+        }
+    }
+
+    // 非恢复下载的更新操作
+    private fun updateEntryForNonRecovery(entry: DownloadEntry) {
+        if (entry.isSupportRange) {
+            entry.status = DownloadStatus.PAUSED
+        } else {
+            entry.status = DownloadStatus.IDLE
+            entry.reset()
+        }
     }
 
     //处理Intent指令
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
-            val entry = it.getParcelableExtra<DownloadEntry>(Constants.KEY_DOWNLOAD_ENTRY)?.let { downloadEntry ->
-                if (mDataChanger.containsDownloadEntry(downloadEntry.id)) {
-                    mDataChanger.queryDownloadEntryById(downloadEntry.id)
-                } else {
-                    downloadEntry
+            val entry = it.getParcelableExtra<DownloadEntry>(Constants.KEY_DOWNLOAD_ENTRY)
+                ?.let { downloadEntry ->
+                    if (mDataChanger.containsDownloadEntry(downloadEntry.id)) {
+                        mDataChanger.queryDownloadEntryById(downloadEntry.id)
+                    } else {
+                        downloadEntry
+                    }
                 }
-            }
 
             val action = it.getIntExtra(Constants.KEY_DOWNLOAD_ACTION, -1)
             doAction(entry, action)
@@ -130,7 +154,8 @@ class DownloaderService : Service()  {
 
     //恢复所有下载
     private fun recoverAll() {
-        val mRecoverableEntries = DataChanger.getInstance(applicationContext).queryAllRecoverableEntries()
+        val mRecoverableEntries =
+            DataChanger.getInstance(applicationContext).queryAllRecoverableEntries()
         mRecoverableEntries.let {
             for (downloadEntry in it) {
                 addDownload(downloadEntry)
@@ -190,10 +215,9 @@ class DownloaderService : Service()  {
     //开始下载任务
     private fun startDownload(entry: DownloadEntry) {
         //FIXME 切换网络3g 没有内存 ，没有sd卡 等情况，自行实现
-        val task = DownloaderTask2(entry, mHandler, mExecutors)
+        val task = DownloaderTask2(entry, mHandler, mExecutors,applicationContext)
         task.start()
         mDownloadingTasks[entry.id] = task
     }
-
 
 }

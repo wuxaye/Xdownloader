@@ -70,6 +70,10 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
                     DownloadStatus.COMPLETED -> {
                         itemMore.visibility = View.GONE
                         itemMore.pause()
+
+                        if (item.currentLength == 0) {
+                            itemSize.visibility = View.GONE
+                        }
                     }
                     DownloadStatus.FAILED -> {
                         itemMore.visibility = View.VISIBLE
@@ -87,7 +91,6 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
                         itemSize.text = ""
                         itemMore.visibility = View.VISIBLE
                         itemMore.pause()
-
                     }
                     DownloadStatus.CONNECTING -> {
                         itemMore.visibility = View.VISIBLE
