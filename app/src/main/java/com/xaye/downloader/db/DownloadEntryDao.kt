@@ -19,8 +19,8 @@ interface DownloadEntryDao {
     @Query("SELECT * FROM downloads")
     suspend fun getAllDownloads(): List<DownloadEntry>
 
-    @Query("SELECT * FROM downloads WHERE id = :id")
-    suspend fun getDownloadById(id: String): DownloadEntry?
+    @Query("SELECT * FROM downloads WHERE `key` = :key")
+    suspend fun getDownloadById(key: String): DownloadEntry?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(downloadEntry: DownloadEntry)
@@ -28,15 +28,7 @@ interface DownloadEntryDao {
     @Delete
     suspend fun deleteDownload(downloadEntry: DownloadEntry): Int
 
-    @Query("DELETE FROM downloads WHERE id = :id")
-    suspend fun deleteDownloadById(id: String): Int
+    @Query("DELETE FROM downloads WHERE `key` = :key")
+    suspend fun deleteDownloadByKey(key: String): Int
 
-    @Query("UPDATE downloads SET status = :status WHERE id = :id")
-    suspend fun updateDownloadStatus(id: String, status: DownloadStatus)
-
-    @Query("UPDATE downloads SET currentLength = :currentLength WHERE id = :id")
-    suspend fun updateDownloadCurrentLength(id: String, currentLength: Int)
-
-    @Query("UPDATE downloads SET totalLength = :totalLength WHERE id = :id")
-    suspend fun updateDownloadTotalLength(id: String, totalLength: Int)
 }

@@ -42,16 +42,16 @@ class DataChanger private constructor(private val context: Context) {
 
     fun postStatus(entry: DownloadEntry) {
 
-        operatedEntries[entry.id] = entry
+        operatedEntries[entry.key] = entry
 
         databaseScope.launch {
             val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
             val existingDownload = withContext(Dispatchers.IO) {
-                downloadDao.getDownloadById(entry.id)
+                downloadDao.getDownloadById(entry.key)
             }
 
             existingDownload?.let {
-                entry.pid = it.pid // 从数据库中同步PID(如果存在)
+                entry.id = it.id // 从数据库中同步PID(如果存在)
             }
 
             withContext(Dispatchers.IO) {
@@ -62,7 +62,7 @@ class DataChanger private constructor(private val context: Context) {
                 //下载完 删除数据库中的记录
                 withContext(Dispatchers.IO) {
                     //由于外部传来的entry 不带pid,所以需要从数据库中查询
-                    val realEntry = downloadDao.getDownloadById(entry.id)
+                    val realEntry = downloadDao.getDownloadById(entry.key)
                     val delete = realEntry?.let { downloadDao.deleteDownload(it) }
 
                     Trace.d("postStatus COMPLETED realEntry url : ${realEntry?.url} delete : $delete")
@@ -92,12 +92,12 @@ class DataChanger private constructor(private val context: Context) {
         return operatedEntries.containsKey(id)
     }
 
-    fun deleteDownloadEntry(id: String): Boolean {
+    fun deleteDownloadEntry(key: String): Boolean {
         databaseScope.launch {
             withContext(Dispatchers.IO) {
-                DownloadDatabase.getInstance(context).downloadEntryDao().deleteDownloadById(id)
+                DownloadDatabase.getInstance(context).downloadEntryDao().deleteDownloadByKey(key)
             }
         }
-        return operatedEntries.remove(id) != null
+        return operatedEntries.remove(key) != null
     }
 }

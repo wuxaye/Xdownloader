@@ -9,6 +9,7 @@ import com.xaye.downloader.DownloaderManager
 import com.xaye.downloader.utilities.Trace
 import com.xaye.downloader.databinding.ActivityMainBinding
 import com.xaye.downloader.entities.DownloadStatus
+import com.xaye.downloader.listener.DownLoadListener
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,17 +34,39 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
+        DownloaderManager.init(this)
         binding.btnDownloader.setOnClickListener {
-//
-//            if (entry == null) {
-//                entry = DownloadEntry()
-//                entry!!.name = "officeIPC_1.apk"
-//                entry!!.url = "http://47.93.99.16:85/download/treadmill/dingkang/app/kuwo/V8.5.0.4/V8.5.0.4.apk"
-//                entry!!.id = "1"
-//            }
-//
-//            DownloaderManager.add(entry)
+
+            DownloaderManager.download(this, tag = "WifiKey",
+                url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk", listener = object :
+                    DownLoadListener {
+                    override fun onUpdate(
+                        key: String,
+                        progress: Int,
+                        read: Long,
+                        count: Long,
+                        done: Boolean
+                    ) {
+                        Trace.d("onUpdate key: $key, progress: $progress, read: $read, count: $count, done: $done")
+                    }
+
+                    override fun onDownLoadPrepare(key: String) {
+                       Trace.d("onDownLoadPrepare key: $key")
+                    }
+
+                    override fun onDownLoadError(key: String, throwable: Throwable) {
+                        Trace.e("onDownLoadError key: $key, throwable: $throwable")
+                    }
+
+                    override fun onDownLoadSuccess(key: String, path: String, size: Long) {
+                        Trace.d("onDownLoadSuccess key: $key, path: $path, size: $size")
+                    }
+
+                    override fun onDownLoadPause(key: String) {
+                        Trace.d("onDownLoadPause key: $key")
+                    }
+
+                })
 
         }
 

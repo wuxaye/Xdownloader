@@ -3,10 +3,12 @@ package com.xaye.downloader
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.xaye.downloader.core.DownloaderService
 import com.xaye.downloader.entities.DownloadEntry
+import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utilities.Constants
 
@@ -101,15 +103,31 @@ object DownloaderManager {
         return DataChanger.getInstance(context).entriesLiveData
     }
 
-    fun download(entry: DownloadEntry): LiveData<DownloadEntry>? {
+    /**
+     * 单文件下载及监听
+     */
+    fun download(
+        lifecycleOwner: LifecycleOwner,
+        tag: String,
+        url: String,
+        savePath: String? = null,
+        saveName: String? = null,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
+        reDownload: Boolean = false,//是否强制重新下载
+        listener: DownLoadListener
+    ) {
+        val entry = DownloadEntry(key = tag, name = "", url = url)
         val intent = Intent(context, DownloaderService::class.java).apply {
             putExtra(Constants.KEY_DOWNLOAD_ENTRY, entry)
             putExtra(Constants.KEY_DOWNLOAD_ACTION, Constants.KEY_DOWNLOAD_ACTION_ADD)
         }
         context.startService(intent)
 
+        getObserver().observe(lifecycleOwner) { entry ->
+            if (entry.key == tag) {
+                entry.notifyListener(listener)
+            }
+        }
 
-        return null
     }
 
     fun queryDownloadEntry(id: String): DownloadEntry? {

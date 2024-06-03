@@ -106,7 +106,7 @@ class DownloaderTask2(
     private suspend fun isDownloadCompleted(entry: DownloadEntry): Boolean {
         return withContext(Dispatchers.IO) {
             val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
-            val downloadEntry = downloadDao.getDownloadById(entry.id)
+            val downloadEntry = downloadDao.getDownloadById(entry.key)
 
             val file = DownloadConfig.getDownloadFile(entry.url)
             Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}")

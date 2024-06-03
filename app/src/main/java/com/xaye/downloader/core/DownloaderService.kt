@@ -60,7 +60,7 @@ class DownloaderService : Service() {
 
     //检查下一个任务
     private fun checkNext(entry: DownloadEntry) {
-        mDownloadingTasks.remove(entry.id)
+        mDownloadingTasks.remove(entry.key)
         // if is not empty, poll next and start download
         mWaitingQueue.poll()?.let { startDownload(it) }
     }
@@ -83,7 +83,7 @@ class DownloaderService : Service() {
             val entries = mDatabase.downloadEntryDao().getAllDownloads()
             entries.forEach { entry ->
                 handleEntry(entry)
-                mDataChanger.addToOperatedEntryMap(entry.id, entry)
+                mDataChanger.addToOperatedEntryMap(entry.key, entry)
             }
         }
     }
@@ -126,8 +126,8 @@ class DownloaderService : Service() {
         intent?.let {
             val entry = it.getParcelableExtra<DownloadEntry>(Constants.KEY_DOWNLOAD_ENTRY)
                 ?.let { downloadEntry ->
-                    if (mDataChanger.containsDownloadEntry(downloadEntry.id)) {
-                        mDataChanger.queryDownloadEntryById(downloadEntry.id)
+                    if (mDataChanger.containsDownloadEntry(downloadEntry.key)) {
+                        mDataChanger.queryDownloadEntryById(downloadEntry.key)
                     } else {
                         downloadEntry
                     }
@@ -193,7 +193,7 @@ class DownloaderService : Service() {
 
     //取消下载任务
     private fun cancelDownload(entry: DownloadEntry) {
-        mDownloadingTasks.remove(entry.id)?.cancel()
+        mDownloadingTasks.remove(entry.key)?.cancel()
         mWaitingQueue.remove(entry)
         entry.status = DownloadStatus.CANCELLED
         DataChanger.getInstance(applicationContext).postStatus(entry)
@@ -206,7 +206,7 @@ class DownloaderService : Service() {
 
     //暂停下载任务
     private fun pauseDownload(entry: DownloadEntry) {
-        mDownloadingTasks.remove(entry.id)?.pause()
+        mDownloadingTasks.remove(entry.key)?.pause()
         mWaitingQueue.remove(entry)
         entry.status = DownloadStatus.PAUSED
         DataChanger.getInstance(applicationContext).postStatus(entry)
@@ -217,7 +217,7 @@ class DownloaderService : Service() {
         //FIXME 切换网络3g 没有内存 ，没有sd卡 等情况，自行实现
         val task = DownloaderTask2(entry, mHandler, mExecutors,applicationContext)
         task.start()
-        mDownloadingTasks[entry.id] = task
+        mDownloadingTasks[entry.key] = task
     }
 
 }

@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.xaye.downloader.DownloadConfig.getDownloadFile
 import com.xaye.downloader.db.Converters
+import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.network.DownloadException
 import kotlinx.parcelize.Parcelize
 
@@ -20,20 +21,19 @@ import kotlinx.parcelize.Parcelize
 @TypeConverters(Converters::class)
 data class DownloadEntry(
     @PrimaryKey(autoGenerate = true)
-    var pid: Long? = null,
-
-    var id: String,//下载任务的唯一ID
+    var id: Long? = null,
+    var key: String,//下载任务的唯一key
     var name: String,
     var url: String,
     var status: DownloadStatus = DownloadStatus.IDLE,
     var currentLength: Int = 0,
     var totalLength: Int = 0,
     var isSupportRange: Boolean = false, // 是否支持断点续传
-    var ranges : HashMap<Int,Int> = HashMap(),//记录每个线程下载的进度
+    var ranges: HashMap<Int, Int> = HashMap(),//记录每个线程下载的进度
     var percent: Int = 0,
     var speed: Float = 0F, //下载速度 剩余时间
-    var exception: DownloadException? = null
-): Parcelable {
+    var exception: DownloadException? = null //下载异常情况
+) : Parcelable {
 
     override fun toString(): String {
         return "DownloadEntry :$url is $status with $currentLength/$totalLength"
@@ -49,5 +49,51 @@ data class DownloadEntry(
             file.delete()
         }
     }
+
+    /**
+     * DownloadEntry 转 DownLoadListener
+     */
+    fun notifyListener(listener: DownLoadListener) {
+        when (this.status) {
+            DownloadStatus.IDLE -> {
+                // No specific callback required for IDLE state
+            }
+
+            DownloadStatus.CONNECTING, DownloadStatus.WAITING -> {
+                listener.onDownLoadPrepare(this.key)
+            }
+
+            DownloadStatus.DOWNLOADING -> {
+                listener.onUpdate(
+                    this.key,
+                    this.percent,
+                    this.currentLength.toLong(),
+                    this.totalLength.toLong(),
+                    this.currentLength == this.totalLength
+                )
+            }
+
+            DownloadStatus.PAUSED -> {
+                listener.onDownLoadPause(this.key)
+            }
+
+            DownloadStatus.COMPLETED -> {
+                listener.onDownLoadSuccess(
+                    this.key,
+                    getDownloadFile(this.url).absolutePath,
+                    this.currentLength.toLong()
+                )
+            }
+
+            DownloadStatus.FAILED, DownloadStatus.ERROR -> {
+                listener.onDownLoadError(this.key, this.exception?.throwable!!)
+            }
+
+            DownloadStatus.CANCELLED -> {
+                // No specific callback required for CANCELLED state
+            }
+        }
+    }
+
 }
 
