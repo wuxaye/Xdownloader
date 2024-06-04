@@ -67,9 +67,19 @@ object DownloadConfig {
         this.max_retry_times = max_retry_times
     }
 
+    /**
+     * 默认文件保存路径、文件名
+     */
     @JvmStatic
-    fun getDownloadFile(url : String) : File {
+    fun getDefaultDownloadFile(url : String) : File {
         return File(downloadDir , FileUtils.getMd5FileName(url))
+    }
+
+    /**
+     * 自定义下载路径、文件名
+     */
+    fun getCustomDownloadFile(savePath: String, saveName: String) : File {
+        return File(savePath , saveName)
     }
 
 }

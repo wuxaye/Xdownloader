@@ -110,12 +110,13 @@ object DownloaderManager {
         lifecycleOwner: LifecycleOwner,
         tag: String,
         url: String,
-        savePath: String? = null,
-        saveName: String? = null,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
+        savePath: String,
+        saveName: String,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
         reDownload: Boolean = false,//是否强制重新下载
         listener: DownLoadListener
     ) {
-        val entry = DownloadEntry(key = tag, name = "", url = url)
+
+        val entry = DownloadEntry(key = tag, name = "", url = url, destFile = DownloadConfig.getCustomDownloadFile(savePath, saveName).absolutePath)
         val intent = Intent(context, DownloaderService::class.java).apply {
             putExtra(Constants.KEY_DOWNLOAD_ENTRY, entry)
             putExtra(Constants.KEY_DOWNLOAD_ACTION, Constants.KEY_DOWNLOAD_ACTION_ADD)
@@ -137,14 +138,14 @@ object DownloaderManager {
     /**
      * 删除下载任务，并删除文件
      */
-    fun deleteDownloadEntry(forceDelete: Boolean, id: String) {
-        DataChanger.getInstance(context).deleteDownloadEntry(id)
-        // TODO: 删除文件
-        if (forceDelete) {
-            val file = DownloadConfig.getDownloadFile(id)
-            if (file.exists()) {
-                file.delete()
-            }
-        }
-    }
+//    fun deleteDownloadEntry(forceDelete: Boolean, id: String) {
+//        DataChanger.getInstance(context).deleteDownloadEntry(id)
+//        // TODO: 删除文件
+//        if (forceDelete) {
+//            val file = DownloadConfig.getDefaultDownloadFile(id)
+//            if (file.exists()) {
+//                file.delete()
+//            }
+//        }
+//    }
 }

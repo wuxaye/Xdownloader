@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Message
-import com.xaye.downloader.DownloadConfig
 import com.xaye.downloader.DownloadConfig.getMaxDownloadTasks
 import com.xaye.downloader.DownloadConfig.getRecoverDownloadWhenStart
 import com.xaye.downloader.db.DownloadDatabase
@@ -14,13 +13,9 @@ import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utilities.Constants
-import com.xaye.downloader.utilities.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -42,7 +37,7 @@ class DownloaderService : Service() {
     }
 
     //初始化变量
-    private val mDownloadingTasks = mutableMapOf<String, DownloaderTask2>()
+    private val mDownloadingTasks = mutableMapOf<String, DownloaderTask>()
     private lateinit var mExecutors: ExecutorService
     private lateinit var mDataChanger: DataChanger
     private lateinit var mDatabase: DownloadDatabase
@@ -214,8 +209,8 @@ class DownloaderService : Service() {
 
     //开始下载任务
     private fun startDownload(entry: DownloadEntry) {
-        //FIXME 切换网络3g 没有内存 ，没有sd卡 等情况，自行实现
-        val task = DownloaderTask2(entry, mHandler, mExecutors,applicationContext)
+        //FIXME 切换网络3g 没有内存 ，没有sd卡 等情况，待实现
+        val task = DownloaderTask(entry, mHandler, mExecutors,applicationContext)
         task.start()
         mDownloadingTasks[entry.key] = task
     }

@@ -4,11 +4,13 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.xaye.downloader.DownloadConfig.getDownloadFile
+import com.xaye.downloader.DownloadConfig
+import com.xaye.downloader.DownloadConfig.getDefaultDownloadFile
 import com.xaye.downloader.db.Converters
 import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.network.DownloadException
 import kotlinx.parcelize.Parcelize
+import java.io.File
 
 /**
  * @FileName:com.xaye.downloader.DownloadEntry.kt
@@ -32,7 +34,8 @@ data class DownloadEntry(
     var ranges: HashMap<Int, Int> = HashMap(),//记录每个线程下载的进度
     var percent: Int = 0,
     var speed: Float = 0F, //下载速度 剩余时间
-    var exception: DownloadException? = null //下载异常情况
+    var exception: DownloadException? = null, //下载异常情况
+    var destFile: String = getDefaultDownloadFile(url).absolutePath //保存到本地的目标文件
 ) : Parcelable {
 
     override fun toString(): String {
@@ -44,15 +47,12 @@ data class DownloadEntry(
         ranges.clear()
         percent = 0
 
-        val file = getDownloadFile(url)
+        val file = getDefaultDownloadFile(url)
         if (file.exists()) {
             file.delete()
         }
     }
 
-    /**
-     * DownloadEntry 转 DownLoadListener
-     */
     fun notifyListener(listener: DownLoadListener) {
         when (this.status) {
             DownloadStatus.IDLE -> {
@@ -80,7 +80,7 @@ data class DownloadEntry(
             DownloadStatus.COMPLETED -> {
                 listener.onDownLoadSuccess(
                     this.key,
-                    getDownloadFile(this.url).absolutePath,
+                    destFile,
                     this.currentLength.toLong()
                 )
             }

@@ -1,15 +1,17 @@
 package com.xaye.downloader.ui
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
+import androidx.appcompat.app.AppCompatActivity
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
-import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.DownloaderManager
-import com.xaye.downloader.utilities.Trace
 import com.xaye.downloader.databinding.ActivityMainBinding
+import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.listener.DownLoadListener
+import com.xaye.downloader.utilities.Trace
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,9 +38,11 @@ class MainActivity : AppCompatActivity() {
 
         DownloaderManager.init(this)
         binding.btnDownloader.setOnClickListener {
-
             DownloaderManager.download(this, tag = "WifiKey",
-                url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk", listener = object :
+                url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk",
+                savePath = Environment.getExternalStorageDirectory().absolutePath + "/CustomDownload/",
+                saveName = "WifiKey5.0.0w.apk",
+                listener = object :
                     DownLoadListener {
                     override fun onUpdate(
                         key: String,
