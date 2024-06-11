@@ -3,14 +3,23 @@ package com.xaye.downloader
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import com.xaye.downloader.core.DownloaderService
 import com.xaye.downloader.entities.DownloadEntry
+import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utilities.Constants
+import com.xaye.downloader.utilities.Trace
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Author xaye
@@ -99,8 +108,12 @@ object DownloaderManager {
     /**
      * 获取下载状态
      */
-    fun getObserver(): LiveData<DownloadEntry> {
+    fun getObserverLiveData(): LiveData<DownloadEntry> {
         return DataChanger.getInstance(context).entriesLiveData
+    }
+
+    fun getObserverFlow(): SharedFlow<DownloadEntry> {
+        return DataChanger.getInstance(context).downloadStatus
     }
 
     /**
@@ -110,22 +123,43 @@ object DownloaderManager {
         lifecycleOwner: LifecycleOwner,
         tag: String,
         url: String,
-        savePath: String,
-        saveName: String,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
+        savePath: String? = null,//文件路径 可自定义，默认使用 FileUtils.getDownloadDir()
+        saveName: String? = null,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
         reDownload: Boolean = false,//是否强制重新下载
         listener: DownLoadListener
     ) {
+        val entry = DownloadEntry(
+            key = tag,
+            name = "",
+            url = url,
+            destFile = if (!savePath.isNullOrEmpty() && !saveName.isNullOrEmpty()) {
+                File(savePath, saveName).absolutePath
+            } else {
+                DownloadConfig.getDefaultDownloadFile(url).absolutePath
+            },
+            reDownload = reDownload
+        )
 
-        val entry = DownloadEntry(key = tag, name = "", url = url, destFile = DownloadConfig.getCustomDownloadFile(savePath, saveName).absolutePath)
         val intent = Intent(context, DownloaderService::class.java).apply {
             putExtra(Constants.KEY_DOWNLOAD_ENTRY, entry)
             putExtra(Constants.KEY_DOWNLOAD_ACTION, Constants.KEY_DOWNLOAD_ACTION_ADD)
         }
+        if (reDownload) {
+            DataChanger.getInstance(context).deleteDownloadEntry(entry.key)
+        }
         context.startService(intent)
 
-        getObserver().observe(lifecycleOwner) { entry ->
-            if (entry.key == tag) {
-                entry.notifyListener(listener)
+        CoroutineScope(Dispatchers.Main).launch {
+            getObserverFlow().collectLatest { entry ->
+                if (entry.key == tag) {
+                    Trace.d("collectLatest DownloadManager.download() entry = $entry")
+                    entry.notifyListener(listener)
+
+                    // 检查下载是否完成，如果完成则取消收集器
+                    if (entry.status == DownloadStatus.COMPLETED || entry.status == DownloadStatus.ERROR) {
+                        this.cancel()// 取消收集器.
+                    }
+                }
             }
         }
 

@@ -87,7 +87,7 @@ class ListActivity : AppCompatActivity() {
                 }
             }
 
-        DownloaderManager.getObserver().observe(this) { data ->
+        DownloaderManager.getObserverLiveData().observe(this) { data ->
             val index = mDownloadEntries.indexOfFirst { it.key == data.key }
             if (index != -1) {
                 mDownloadEntries[index] = data

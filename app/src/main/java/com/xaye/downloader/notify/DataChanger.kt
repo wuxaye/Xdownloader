@@ -11,6 +11,9 @@ import com.xaye.downloader.utilities.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
@@ -23,6 +26,9 @@ class DataChanger private constructor(private val context: Context) {
     private val operatedEntries = ConcurrentHashMap<String, DownloadEntry>()
     private val _entriesLiveData = MutableLiveData<DownloadEntry>()
     val entriesLiveData: LiveData<DownloadEntry> get() = _entriesLiveData
+
+    private val _downloadStatus = MutableSharedFlow<DownloadEntry>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val downloadStatus: SharedFlow<DownloadEntry> get() = _downloadStatus
 
     //SupervisorJob()，保证 databaseScope 的生命周期管理，并避免子协程失败影响其他协程
     private val databaseScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -56,6 +62,7 @@ class DataChanger private constructor(private val context: Context) {
 
             withContext(Dispatchers.IO) {
                 downloadDao.insertOrUpdate(entry)
+                Trace.d("postStatus insertOrUpdateentry : $entry")
             }
 
             if (entry.status == DownloadStatus.COMPLETED) {
@@ -71,7 +78,9 @@ class DataChanger private constructor(private val context: Context) {
 
             // 用主线程上的最新条目更新LiveData
             withContext(Dispatchers.Main) {
-                _entriesLiveData.value = entry
+                _entriesLiveData.value = entry //livedata
+
+                _downloadStatus.emit(entry)//flow
             }
         }
     }

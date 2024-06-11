@@ -13,6 +13,7 @@ import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utilities.Constants
+import com.xaye.downloader.utilities.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,7 +84,6 @@ class DownloaderService : Service() {
         }
     }
 
-    // 处理每个条目的函数
     private suspend fun handleEntry(entry: DownloadEntry) {
         if (entry.status == DownloadStatus.DOWNLOADING || entry.status == DownloadStatus.WAITING) {
             if (getRecoverDownloadWhenStart()) {

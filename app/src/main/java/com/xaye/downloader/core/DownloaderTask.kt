@@ -81,7 +81,7 @@ class DownloaderTask(
     * */
     fun start() {
         taskScope.launch {
-            if (isDownloadCompleted(entry)) {
+            if (isDownloadCompleted(entry) && !entry.reDownload) {
                 entry.status = DownloadStatus.COMPLETED
                 notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
             } else {
@@ -100,18 +100,22 @@ class DownloaderTask(
 
     }
 
+    /*
+    *判断文件是否下载完成
+    * */
     private suspend fun isDownloadCompleted(entry: DownloadEntry): Boolean {
         return withContext(Dispatchers.IO) {
             val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
             val downloadEntry = downloadDao.getDownloadById(entry.key)
 
             val file = File(entry.destFile)
-            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}")
             val currentLength = if (!file.exists()) {
                 0L
             } else {
                 downloadEntry?.currentLength ?: 0L
             }
+            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}  - ${entry.hashCode()}")
+
             file.exists() && currentLength == 0L
         }
     }

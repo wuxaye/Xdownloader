@@ -6,13 +6,37 @@
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
+    <TextView
+        android:id="@+id/tvProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0%"
+        android:textSize="18sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/progressBar"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvProgress"
+        android:layout_marginTop="16dp"
+        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvProgress"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btn_download"/>
+
+
     <Button
-        android:id="@+id/btn_downloader"
+        android:id="@+id/btn_download"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="下载"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_pause"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -21,18 +45,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="暂停"
-        app:layout_constraintLeft_toLeftOf="@id/btn_downloader"
-        app:layout_constraintTop_toBottomOf="@id/btn_downloader"
-        app:layout_constraintRight_toRightOf="@id/btn_downloader"/>
+        app:layout_constraintTop_toTopOf="@id/btn_download"
+        app:layout_constraintStart_toEndOf="@id/btn_download"
+        app:layout_constraintEnd_toStartOf="@id/btn_cancel"/>
 
     <Button
         android:id="@+id/btn_cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="取消"
-        app:layout_constraintLeft_toLeftOf="@id/btn_pause"
-        app:layout_constraintTop_toBottomOf="@id/btn_pause"
-        app:layout_constraintRight_toRightOf="@id/btn_pause"/>
+        app:layout_constraintTop_toTopOf="@id/btn_download"
+        app:layout_constraintStart_toEndOf="@id/btn_pause"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,6 +6,7 @@ package com.xaye.downloader.listener
  */
 interface DownLoadListener {
 
+    //更新进度
     fun onUpdate( key: String,progress: Int, read: Long,count: Long,done: Boolean)
 
     //等待下载

@@ -35,7 +35,8 @@ data class DownloadEntry(
     var percent: Int = 0,
     var speed: Float = 0F, //下载速度 剩余时间
     var exception: DownloadException? = null, //下载异常情况
-    var destFile: String = getDefaultDownloadFile(url).absolutePath //保存到本地的目标文件
+    var destFile: String = getDefaultDownloadFile(url).absolutePath, //保存到本地的目标文件路径
+    var reDownload: Boolean = false,//是否强制重新下载
 ) : Parcelable {
 
     override fun toString(): String {
