@@ -7,7 +7,7 @@
 此框架将会持续更新，力求完美，欢迎star
 
 <p align="center">
-  <img width="950" src="https://github.com/wuxaye/Xdownloader/tree/master/assets/Xdownload_logo.png" >
+  <img width="950" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/Xdownload_logo.png" >
 </p>
 
 ## 软件架构
