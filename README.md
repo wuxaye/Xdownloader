@@ -6,6 +6,10 @@
 
 此框架将会持续更新，力求完美，欢迎star
 
+<p align="center">
+  <img width="950" src="https://github.com/wuxaye/Xdownloader/tree/master/assets/Ketch_logo.png" >
+</p>
+
 ## 软件架构
 
 Kotlin + Room + Flow + Coroutine

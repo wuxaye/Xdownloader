@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.xaye.downloader.entities.DownloadEntry
-import com.xaye.downloader.entities.DownloadStatus
 
 /**
  * @FileName:com.xaye.downloader.db.DownloadEntryDao.kt
