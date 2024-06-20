@@ -4,7 +4,7 @@ import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.network.DownloadException
 import com.xaye.downloader.network.Error
 import com.xaye.downloader.network.ExceptionHandle
-import com.xaye.downloader.utilities.Constants
+import com.xaye.downloader.utils.Constants
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

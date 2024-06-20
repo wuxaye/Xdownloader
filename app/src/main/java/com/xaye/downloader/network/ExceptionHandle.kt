@@ -6,6 +6,7 @@ import com.google.gson.stream.MalformedJsonException
 import org.apache.http.conn.ConnectTimeoutException
 import org.json.JSONException
 import java.net.ConnectException
+import javax.net.ssl.SSLHandshakeException
 
 /**
  * Author xaye
@@ -20,7 +21,7 @@ object ExceptionHandle {
                     ex = DownloadException(Error.PARSE_ERROR, e)
                     return ex
                 }
-                is ConnectException -> {
+                is ConnectException , is SSLHandshakeException -> {
                     ex = DownloadException(Error.NETWORK_ERROR, e)
                     return ex
                 }

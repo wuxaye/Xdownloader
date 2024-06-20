@@ -36,7 +36,12 @@ enum class Error(private val code: Int, private val err: String) {
     /**
      * 服务器出错
      */
-    SERVER_ERROR(1008, "服务器出错，请稍后再试");
+    SERVER_ERROR(1008, "服务器出错，请稍后再试"),
+
+    /**
+     * 建立连接时 服务器响应码不对
+     */
+    RESPONSE_CODE_ERROR(1009, "响应码错误");
 
     fun getValue(): String {
         return err

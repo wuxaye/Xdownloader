@@ -57,17 +57,13 @@ dependencies {
 
     // Room
     implementation("androidx.room:room-runtime:2.6.0-alpha01")
-
     kapt("androidx.room:room-compiler:2.6.0-alpha01")
     // Kotlin 使用 kapt 替代 annotationProcessor
-
     // 可选 - Kotlin扩展和协程支持
     implementation("androidx.room:room-ktx:2.6.0-alpha01")
     // 可选 - RxJava 支持
     //implementation("androidx.room:room-rxjava2:$room_version")
-
     implementation("com.google.code.gson:gson:2.8.6")
-
     // 权限请求框架：https://github.com/getActivity/XXPermissions
     implementation("com.github.getActivity:XXPermissions:18.63")
 

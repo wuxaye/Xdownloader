@@ -1,7 +1,7 @@
 package com.xaye.downloader
 
 import android.os.Environment
-import com.xaye.downloader.utilities.FileUtils
+import com.xaye.downloader.utils.FileUtils
 import java.io.File
 
 /**

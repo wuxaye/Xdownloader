@@ -11,7 +11,7 @@ import com.xaye.downloader.DownloaderManager
 import com.xaye.downloader.databinding.MissionItemLinearBinding
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
-import com.xaye.downloader.utilities.TextUtil
+import com.xaye.downloader.utils.TextUtil
 
 /**
  * @FileName:com.xaye.downloader.ui.ListAdapter.kt

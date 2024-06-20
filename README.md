@@ -12,7 +12,7 @@
 
 ## 软件架构
 
-Kotlin + Room + Flow + Coroutine
+Kotlin + Room + Flow + 协程
 
 
 ## 功能
@@ -25,11 +25,26 @@ Kotlin + Room + Flow + Coroutine
 
 - 自动恢复上次下载任务
 
-- 下载异常自动重试，设置最大重试次数，重试间隔
+- 下载异常自动重试，设置最大重试次数，重试时间间隔
 
 - 可选 `LiveData` 或 `Flow` 监听下载状态
 
+- 状态栏通知栏下载进度（还未完善）
 ...
+
+## 截图
+
+<div style="display: flex; justify-content: space-between;">
+  <div style="text-align: center;">
+    <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/single.png" >
+    <p>单任务下载</p>
+  </div>
+  <div style="text-align: center;">
+    <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/multi.png" >
+    <p>多任务下载</p>
+  </div>
+</div>
+
 
 ## 问题
 

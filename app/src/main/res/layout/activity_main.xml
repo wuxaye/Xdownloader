@@ -23,6 +23,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/tvProgress"
         android:layout_marginTop="16dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
         style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvProgress"

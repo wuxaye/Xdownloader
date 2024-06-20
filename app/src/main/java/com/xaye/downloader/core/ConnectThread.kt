@@ -1,7 +1,10 @@
 package com.xaye.downloader.core
 
-import com.xaye.downloader.utilities.Constants
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.network.DownloadException
+import com.xaye.downloader.network.Error
+import com.xaye.downloader.network.ExceptionHandle
+import com.xaye.downloader.utils.Constants
+import com.xaye.downloader.utils.Trace
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -31,7 +34,14 @@ class ConnectThread(private val url: String, private val listener: ConnectListen
                 }
                 listener.onConnected(isSupportRange, contentLength)
             } else {
-                listener.onConnectError("server error responseCode:$responseCode")
+                listener.onConnectError(
+                    DownloadException(
+                        Error.RESPONSE_CODE_ERROR.getKey(),
+                        Error.RESPONSE_CODE_ERROR.getValue(),
+                        responseCode.toString(),
+                        null
+                    )
+                )
             }
 
             Trace.d("ConnectThread responseCode:$responseCode")
@@ -39,7 +49,8 @@ class ConnectThread(private val url: String, private val listener: ConnectListen
             isRunning = false
         } catch (e: IOException) {
             isRunning = false
-            listener.onConnectError(e.message ?: "")
+            Trace.e("ConnectThread error:${e.message}  e: $e")
+            listener.onConnectError(ExceptionHandle.handleException(e))
             e.printStackTrace()
         } finally {
             connection?.disconnect()
@@ -53,6 +64,6 @@ class ConnectThread(private val url: String, private val listener: ConnectListen
     interface ConnectListener {
         fun onConnected(isSupportRange: Boolean, totalLength: Int)
 
-        fun onConnectError(message: String)
+        fun onConnectError(exception: DownloadException)
     }
 }

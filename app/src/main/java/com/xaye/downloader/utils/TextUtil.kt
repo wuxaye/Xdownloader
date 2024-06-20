@@ -1,4 +1,4 @@
-package com.xaye.downloader.utilities
+package com.xaye.downloader.utils
 
 internal object TextUtil {
 

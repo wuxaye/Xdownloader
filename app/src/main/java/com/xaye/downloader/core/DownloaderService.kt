@@ -12,14 +12,14 @@ import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.notify.DataChanger
-import com.xaye.downloader.utilities.Constants
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.utils.Constants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+
 
 /**
  * Author xaye
@@ -188,10 +188,14 @@ class DownloaderService : Service() {
 
     //取消下载任务
     private fun cancelDownload(entry: DownloadEntry) {
-        mDownloadingTasks.remove(entry.key)?.cancel()
-        mWaitingQueue.remove(entry)
-        entry.status = DownloadStatus.CANCELLED
-        DataChanger.getInstance(applicationContext).postStatus(entry)
+        val task = mDownloadingTasks.remove(entry.key)
+        if (task != null) {
+            task.cancel()
+        } else {
+            mWaitingQueue.remove(entry)
+            entry.status = DownloadStatus.CANCELLED
+            DataChanger.getInstance(applicationContext).postStatus(entry)
+        }
     }
 
     //继续下载任务

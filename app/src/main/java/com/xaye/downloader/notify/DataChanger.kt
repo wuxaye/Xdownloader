@@ -1,13 +1,12 @@
 package com.xaye.downloader.notify
 
 import android.content.Context
-import android.os.Handler
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -65,12 +64,14 @@ class DataChanger private constructor(private val context: Context) {
                 Trace.d("postStatus insertOrUpdateentry : $entry")
             }
 
-            if (entry.status == DownloadStatus.COMPLETED) {
+            if (entry.currentLength == entry.totalLength) {
                 //下载完 删除数据库中的记录
                 withContext(Dispatchers.IO) {
                     //由于外部传来的entry 不带pid,所以需要从数据库中查询
                     val realEntry = downloadDao.getDownloadById(entry.key)
                     val delete = realEntry?.let { downloadDao.deleteDownload(it) }
+
+                    operatedEntries.remove(entry.key)
 
                     Trace.d("postStatus COMPLETED realEntry url : ${realEntry?.url} delete : $delete")
                 }

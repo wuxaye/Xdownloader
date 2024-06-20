@@ -1,4 +1,4 @@
-package com.xaye.downloader.utilities
+package com.xaye.downloader.utils
 
 import android.util.Log
 

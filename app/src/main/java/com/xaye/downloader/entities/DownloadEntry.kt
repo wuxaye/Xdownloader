@@ -87,11 +87,11 @@ data class DownloadEntry(
             }
 
             DownloadStatus.FAILED, DownloadStatus.ERROR -> {
-                listener.onDownLoadError(this.key, this.exception?.throwable!!)
+                listener.onDownLoadError(this.key,this.exception?.errorMsg!!,this.exception?.throwable!!)
             }
 
             DownloadStatus.CANCELLED -> {
-                // No specific callback required for CANCELLED state
+                listener.onDownLoadCancel(this.key)
             }
         }
     }

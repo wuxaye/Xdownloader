@@ -2,19 +2,13 @@ package com.xaye.downloader.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
-import android.util.Log
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.DownloaderManager
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.utils.Trace
 import com.xaye.downloader.databinding.ActivityListBinding
-import com.xaye.downloader.db.DownloadDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * stay4j - 10

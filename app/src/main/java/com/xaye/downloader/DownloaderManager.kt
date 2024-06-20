@@ -10,12 +10,11 @@ import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.notify.DataChanger
-import com.xaye.downloader.utilities.Constants
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.utils.Constants
+import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -120,14 +119,13 @@ object DownloaderManager {
      * 单文件下载及监听
      */
     fun download(
-        lifecycleOwner: LifecycleOwner,
         tag: String,
         url: String,
         savePath: String? = null,//文件路径 可自定义，默认使用 FileUtils.getDownloadDir()
         saveName: String? = null,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
-        reDownload: Boolean = false,//是否强制重新下载
-        listener: DownLoadListener
-    ) {
+        reDownload: Boolean = false,//是否强制重新下载（无论文件下载完成没完成，都重新下载）
+        listener: DownLoadListener?
+    ): DownloadEntry{
         val entry = DownloadEntry(
             key = tag,
             name = "",
@@ -149,11 +147,12 @@ object DownloaderManager {
         }
         context.startService(intent)
 
+        //也可以外部多个地方收集
         CoroutineScope(Dispatchers.Main).launch {
             getObserverFlow().collectLatest { entry ->
                 if (entry.key == tag) {
                     Trace.d("collectLatest DownloadManager.download() entry = $entry")
-                    entry.notifyListener(listener)
+                    listener?.let { entry.notifyListener(listener) }
 
                     // 检查下载是否完成，如果完成则取消收集器
                     if (entry.status == DownloadStatus.COMPLETED || entry.status == DownloadStatus.ERROR) {
@@ -162,7 +161,7 @@ object DownloaderManager {
                 }
             }
         }
-
+        return entry
     }
 
     fun queryDownloadEntry(id: String): DownloadEntry? {

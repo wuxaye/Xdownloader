@@ -1,4 +1,4 @@
-package com.xaye.downloader.utilities
+package com.xaye.downloader.utils
 
 /**
  * Author xaye
@@ -24,4 +24,14 @@ object Constants {
     const val CONNECT_TIMEOUT = 3000
 
     const val READ_TIMEOUT = 5000
+
+    const val MAX_VALUE_PROGRESS = 100
+
+    const val KEY_REQUEST_ID = "key_request_id"
+
+    const val KEY_FILE_NAME = "key_fileName"
+
+    const val KEY_LENGTH = "key_length"
+
+    const val DEFAULT_VALUE_LENGTH = 0L
 }

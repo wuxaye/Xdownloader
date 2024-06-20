@@ -8,7 +8,8 @@ import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.network.DownloadException
-import com.xaye.downloader.utilities.Trace
+import com.xaye.downloader.network.ExceptionHandle
+import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -114,7 +115,8 @@ class DownloaderTask(
             } else {
                 downloadEntry?.currentLength ?: 0L
             }
-            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}  - ${entry.hashCode()}")
+            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}}")
+
 
             file.exists() && currentLength == 0L
         }
@@ -154,8 +156,8 @@ class DownloaderTask(
     /*
     *连接服务器失败后的回调
     * */
-    override fun onConnectError(message: String) {
-        Trace.d("onConnectError message = $message")
+    override fun onConnectError(exception: DownloadException) {
+        Trace.d("onConnectError message = $exception")
         entry.status = if (isPaused) {
             DownloadStatus.PAUSED
         } else if (isCancelled) {
@@ -163,6 +165,7 @@ class DownloaderTask(
         } else {
             DownloadStatus.ERROR
         }
+        entry.exception =  exception
         notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
     }
 
