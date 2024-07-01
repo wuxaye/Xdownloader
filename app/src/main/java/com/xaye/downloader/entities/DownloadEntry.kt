@@ -9,6 +9,7 @@ import com.xaye.downloader.DownloadConfig.getDefaultDownloadFile
 import com.xaye.downloader.db.Converters
 import com.xaye.downloader.listener.DownLoadListener
 import com.xaye.downloader.network.DownloadException
+import com.xaye.downloader.utils.FileUtils.getUniqueId
 import kotlinx.parcelize.Parcelize
 import java.io.File
 
@@ -23,9 +24,9 @@ import java.io.File
 @TypeConverters(Converters::class)
 data class DownloadEntry(
     @PrimaryKey(autoGenerate = true)
-    var id: Long? = null,
+    var id: Long? = null,//主键id
     var key: String,//下载任务的唯一key
-    var name: String,
+    var fileName: String,
     var url: String,
     var status: DownloadStatus = DownloadStatus.IDLE,
     var currentLength: Int = 0,
@@ -35,8 +36,9 @@ data class DownloadEntry(
     var percent: Int = 0,
     var speed: Float = 0F, //下载速度 剩余时间
     var exception: DownloadException? = null, //下载异常情况
-    var destFile: String = getDefaultDownloadFile(url).absolutePath, //保存到本地的目标文件路径
+    var path: String = getDefaultDownloadFile(url).absolutePath, //保存到本地的目标文件路径
     var reDownload: Boolean = false,//是否强制重新下载
+    var uniqueId: Int = getUniqueId(url, path, fileName),
 ) : Parcelable {
 
     override fun toString(): String {
@@ -81,13 +83,13 @@ data class DownloadEntry(
             DownloadStatus.COMPLETED -> {
                 listener.onDownLoadSuccess(
                     this.key,
-                    destFile,
+                    path,
                     this.currentLength.toLong()
                 )
             }
 
             DownloadStatus.FAILED, DownloadStatus.ERROR -> {
-                listener.onDownLoadError(this.key,this.exception?.errorMsg!!,this.exception?.throwable!!)
+                listener.onDownLoadError(this.key,this.exception?.errorMsg,this.exception?.throwable)
             }
 
             DownloadStatus.CANCELLED -> {

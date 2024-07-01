@@ -14,7 +14,7 @@ import java.io.File
  * Created by 11623 on 2024/4/27
  */
 @Database(entities = [DownloadEntry::class], version = 1, exportSchema = false)
-abstract class DownloadDatabase : RoomDatabase(){
+abstract class DownloadDatabase : RoomDatabase() {
     abstract fun downloadEntryDao(): DownloadEntryDao
 
     companion object {
@@ -30,7 +30,8 @@ abstract class DownloadDatabase : RoomDatabase(){
                             context, DownloadDatabase::class.java,
                             context.getExternalFilesDir("database")
                                 .toString() + File.separator + "downloadDB.db"
-                        ).build()
+                        ).fallbackToDestructiveMigration()  // TODO: 开发阶段暴力升级数据库 
+                            .build()
                     }
                 }
             }

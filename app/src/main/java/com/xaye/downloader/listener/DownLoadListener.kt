@@ -13,7 +13,7 @@ interface DownLoadListener {
     fun onDownLoadPrepare(key: String)
 
     //下载失败
-    fun onDownLoadError(key: String, errorMsg: String, throwable: Throwable)
+    fun onDownLoadError(key: String, errorMsg: String?, throwable: Throwable?)
 
     //下载成功
     fun onDownLoadSuccess(key: String, path: String, size: Long)

@@ -2,7 +2,6 @@ package com.xaye.downloader.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
@@ -11,7 +10,7 @@ import com.xaye.downloader.databinding.ActivityMainBinding
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.listener.DownLoadListener
-import com.xaye.downloader.notification.NotificationHandler
+import com.xaye.downloader.notification.DownloadNotificationManager
 import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +22,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private var notificationHandler: NotificationHandler? = null
 
     var entry : DownloadEntry? = null
 
@@ -47,13 +45,9 @@ class MainActivity : AppCompatActivity() {
         DownloaderManager.init(this)
         binding.btnDownload.setOnClickListener {
 
-            if (notificationHandler == null) {
-                notificationHandler = NotificationHandler(this)
-            }
-
             entry = DownloaderManager.download(tag = "WifiKey",
                 url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk",
-                reDownload = false,
+                reDownload = true,
                 listener = object :
                     DownLoadListener {
                     override fun onUpdate(
@@ -67,7 +61,6 @@ class MainActivity : AppCompatActivity() {
                         binding.tvProgress.text = "$progress%"
                         binding.progressBar.progress = progress
 
-                        notificationHandler?.sendUpdateNotification(fileName = key, progress = progress, speedInBPerMs = 0f, length = count)
                     }
 
                     override fun onDownLoadPrepare(key: String) {
@@ -77,12 +70,11 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onDownLoadError(
                         key: String,
-                        errorMsg: String,
-                        throwable: Throwable
+                        errorMsg: String?,
+                        throwable: Throwable?
                     ) {
                         Trace.e("onDownLoadError key: $key, throwable: $throwable")
                         binding.tvProgress.text = "$errorMsg"
-                        notificationHandler?.sendDownloadFailedNotification(fileName = key)
                     }
 
                     @SuppressLint("SetTextI18n")
@@ -91,7 +83,6 @@ class MainActivity : AppCompatActivity() {
                         binding.tvProgress.text = 100.toString() + "%"
                         binding.progressBar.progress = 100
 
-                        notificationHandler?.sendDownloadSuccessNotification(fileName = key)
                     }
 
                     override fun onDownLoadPause(key: String) {

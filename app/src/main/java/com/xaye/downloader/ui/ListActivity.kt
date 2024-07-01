@@ -24,12 +24,12 @@ class ListActivity : AppCompatActivity() {
         binding = ActivityListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val entry1 = DownloadEntry(key = "1", name =  "中关村在线", url = "https://down11.zol.com.cn/liaotian/ZOL_Android-v10.04.02-full-20240429_encrypted_zol-m_14_align.apk")
-        val entry2 = DownloadEntry(key = "2", name =  "微信", url = "https://down11.zol.com.cn/liaotiao/weixin8047g.apk")
-        val entry3 = DownloadEntry(key = "3", name =  "手机QQ", url = "https://down11.zol.com.cn/liaotiao/Android_9.0.30_64g.apk")
-        val entry4 = DownloadEntry(key = "4", name =  "WIFI万能钥匙", url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk")
-        val entry5 = DownloadEntry(key = "5", name =  "酷狗音乐", url = "https://down11.zol.com.cn/liaotiao/KugouPlayer12.1.8g.apk")
-        val entry6 = DownloadEntry(key = "6", name =  "应用宝", url = "https://down11.zol.com.cn/liaotiao/yingyongbao8.6.5w.apk")
+        val entry1 = DownloadEntry(key = "1", fileName =  "中关村在线", url = "https://down11.zol.com.cn/liaotian/ZOL_Android-v10.04.02-full-20240429_encrypted_zol-m_14_align.apk")
+        val entry2 = DownloadEntry(key = "2", fileName =  "微信", url = "https://down11.zol.com.cn/liaotiao/weixin8047g.apk")
+        val entry3 = DownloadEntry(key = "3", fileName =  "手机QQ", url = "https://down11.zol.com.cn/liaotiao/Android_9.0.30_64g.apk")
+        val entry4 = DownloadEntry(key = "4", fileName =  "WIFI万能钥匙", url = "https://down11.zol.com.cn/liaotiao/WifiKey5.0.0w.apk")
+        val entry5 = DownloadEntry(key = "5", fileName =  "酷狗音乐", url = "https://down11.zol.com.cn/liaotiao/KugouPlayer12.1.8g.apk")
+        val entry6 = DownloadEntry(key = "6", fileName =  "应用宝", url = "https://down11.zol.com.cn/liaotiao/yingyongbao8.6.5w.apk")
 
         mDownloadEntries.add(entry1)
         mDownloadEntries.add(entry2)

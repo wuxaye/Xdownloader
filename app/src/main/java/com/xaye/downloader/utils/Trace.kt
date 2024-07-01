@@ -6,7 +6,7 @@ import android.util.Log
  * Author xaye
  * @date: 2024-05-26 19:10
  */
-object Trace {
+internal object Trace {
     private const val TAG = "Downloader"
     private const val DEBUG = true
 

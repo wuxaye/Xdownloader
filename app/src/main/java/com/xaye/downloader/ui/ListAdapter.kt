@@ -34,7 +34,7 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
     override fun onBindViewHolder(holder: VH, position: Int, item: DownloadEntry?) {
         if (item != null) {
             holder.binding.apply {
-                itemName.text = item.name
+                itemName.text = item.fileName
                 itemSize.text = TextUtil.getTotalLengthText(item.totalLength.toLong())
                 itemStatus.text = when (item.status) {
                     DownloadStatus.IDLE -> "空闲"

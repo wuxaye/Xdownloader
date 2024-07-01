@@ -3,7 +3,6 @@ package com.xaye.downloader
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import com.xaye.downloader.core.DownloaderService
 import com.xaye.downloader.entities.DownloadEntry
@@ -38,7 +37,7 @@ object DownloaderManager {
     }
 
     /**
-     * 添加下载任务
+     * 添加下载任务,直接开始下载
      */
     fun add(entry: DownloadEntry) {
         val intent = Intent(context, DownloaderService::class.java).apply {
@@ -125,12 +124,12 @@ object DownloaderManager {
         saveName: String? = null,//文件名 可自定义，默认使用 FileUtils.getMd5FileName(url)
         reDownload: Boolean = false,//是否强制重新下载（无论文件下载完成没完成，都重新下载）
         listener: DownLoadListener?
-    ): DownloadEntry{
+    ): DownloadEntry {
         val entry = DownloadEntry(
             key = tag,
-            name = "",
+            fileName = tag,
             url = url,
-            destFile = if (!savePath.isNullOrEmpty() && !saveName.isNullOrEmpty()) {
+            path = if (!savePath.isNullOrEmpty() && !saveName.isNullOrEmpty()) {
                 File(savePath, saveName).absolutePath
             } else {
                 DownloadConfig.getDefaultDownloadFile(url).absolutePath

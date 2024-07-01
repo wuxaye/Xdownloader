@@ -4,11 +4,14 @@ import android.content.Context
 import android.os.Handler
 import android.os.Message
 import com.xaye.downloader.DownloadConfig
+import com.xaye.downloader.R
 import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.network.DownloadException
 import com.xaye.downloader.network.ExceptionHandle
+import com.xaye.downloader.notification.DownloadNotificationManager
+import com.xaye.downloader.utils.TextUtil
 import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,26 +31,21 @@ class DownloaderTask(
     private val context: Context
 ) : ConnectThread.ConnectListener, DownloadThread.DownloadListener {
 
-    /*
-    *控制下载状态的变量
-    * */
     @Volatile
     private var isPaused: Boolean = false //是否暂停
-
     @Volatile
     private var isCancelled: Boolean = false //是否取消
-
     private var connectThread: ConnectThread? = null //负责连接的线程
-
     private var downloadThreads: Array<DownloadThread?>? = null //负责下载的线程
     private lateinit var downloadStatus: Array<DownloadStatus> //记录每个下载线程的状态
     private var lastStamp: Long = 0 //上次更新UI的时间戳
-
     private var tempBytes = 0L //记录下载的临时字节数
     private var speed: Float = 0F //下载速度
     private var progressInvokeTime = System.currentTimeMillis() //上次更新下载进度的时间戳
 
     private val taskScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private var downloadNotificationManager: DownloadNotificationManager? = null
 
 
     /*
@@ -81,6 +79,18 @@ class DownloaderTask(
     *开始下载
     * */
     fun start() {
+        if (downloadNotificationManager == null) {
+            downloadNotificationManager = DownloadNotificationManager(
+                context = context,
+                notificationChannelName = "文件下载",
+                notificationChannelDescription = "通知文件下载状态",
+                notificationImportance = 4,
+                requestId = entry.uniqueId,
+                notificationSmallIcon = R.drawable.ic_launcher_foreground,
+                fileName = entry.key
+            )
+        }
+
         taskScope.launch {
             if (isDownloadCompleted(entry) && !entry.reDownload) {
                 entry.status = DownloadStatus.COMPLETED
@@ -109,7 +119,7 @@ class DownloaderTask(
             val downloadDao = DownloadDatabase.getInstance(context).downloadEntryDao()
             val downloadEntry = downloadDao.getDownloadById(entry.key)
 
-            val file = File(entry.destFile)
+            val file = File(entry.path)
             val currentLength = if (!file.exists()) {
                 0L
             } else {
@@ -205,7 +215,7 @@ class DownloaderTask(
 
             if (startPos < endPos) {
                 downloadThreads!![i] =
-                    DownloadThread(entry.url, File(entry.destFile), i, startPos, endPos, this)
+                    DownloadThread(entry.url, File(entry.path), i, startPos, endPos, this)
                 executor.execute(downloadThreads!![i])
             } else {
                 downloadStatus[i] = DownloadStatus.COMPLETED
@@ -223,7 +233,7 @@ class DownloaderTask(
         entry.status = DownloadStatus.DOWNLOADING
         notifyUpdate(entry, DownloaderService.NOTIFY_DOWNLOADING)
 
-        downloadThreads = arrayOf(DownloadThread(entry.url, File(entry.destFile), 0, 0, 0, this))
+        downloadThreads = arrayOf(DownloadThread(entry.url, File(entry.path), 0, 0, 0, this))
 
         downloadStatus = Array(1) { DownloadStatus.DOWNLOADING }
         executor.execute(downloadThreads!![0])
@@ -247,7 +257,7 @@ class DownloaderTask(
 
         val stamp = System.currentTimeMillis()
         //最小间隔500ms 通知一次
-        if (stamp - lastStamp >= 500) {
+        if (stamp - lastStamp >= DownloadConfig.getMinOperateInterval()) {
             speed = tempBytes.toFloat() / ((finalTime - progressInvokeTime).toFloat())
             tempBytes = 0L
             entry.speed = speed
@@ -255,6 +265,11 @@ class DownloaderTask(
 
             lastStamp = stamp
             notifyUpdate(entry, DownloaderService.NOTIFY_UPDATING)
+            downloadNotificationManager?.sendUpdateNotification(
+                entry.percent,
+                speed,
+                entry.totalLength.toLong()
+            )
         }
     }
 
@@ -274,9 +289,11 @@ class DownloaderTask(
                 entry.status = DownloadStatus.ERROR
                 entry.reset()
                 notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
+                downloadNotificationManager?.sendDownloadFailedNotification()
             } else {
                 entry.status = DownloadStatus.COMPLETED
                 notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
+                downloadNotificationManager?.sendDownloadSuccessNotification(TextUtil.getTotalLengthText(entry.totalLength.toLong()))
             }
         }
 
@@ -313,6 +330,7 @@ class DownloaderTask(
         if (downloadStatus.all { it == DownloadStatus.PAUSED || it == DownloadStatus.COMPLETED }) {
             entry.status = DownloadStatus.PAUSED
             notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
+            downloadNotificationManager?.sendDownloadPausedNotification()
         }
     }
 
@@ -330,6 +348,7 @@ class DownloaderTask(
             entry.reset()
 
             notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
+            downloadNotificationManager?.sendDownloadCancelledNotification()
         }
     }
 
@@ -390,7 +409,7 @@ class DownloaderTask(
         if (startPos < endPos) {
             downloadThreads?.set(
                 index,
-                DownloadThread(entry.url, File(entry.destFile), index, startPos, endPos, this)
+                DownloadThread(entry.url, File(entry.path), index, startPos, endPos, this)
             )
             executor.execute(downloadThreads!![index])
         }
