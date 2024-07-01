@@ -30,16 +30,14 @@ Kotlin + Room + Flow + 协程
 - 可选 `LiveData` 或 `Flow` 监听下载状态
 
 - 状态栏通知栏下载进度
-...
+
 
 ## 截图
 
-<div style="display: flex; justify-content: space-between;">
-  <div style="text-align: center;">
-    <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/single.png" >  <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/multi.png" >
-    <p>单任务下载</p>
-  </div>
-</div>
+
+<p align="center">
+ <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/single.png" >  <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/multi.png" >
+</p>
 
 <p align="center">
   <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/notify1.png" >   <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/notify2.png" >
