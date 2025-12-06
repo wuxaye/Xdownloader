@@ -29,7 +29,7 @@ Kotlin + Room + Flow + 协程
 
 - 可选 `LiveData` 或 `Flow` 监听下载状态
 
-- 状态栏通知栏下载进度
+~~- 状态栏通知栏下载进度~~
 
 
 ## 截图
@@ -39,9 +39,6 @@ Kotlin + Room + Flow + 协程
  <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/single.png" >  <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/multi.png" >
 </p>
 
-<p align="center">
-  <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/notify1.png" >   <img width="300" height="auto" src="https://github.com/wuxaye/Xdownloader/blob/master/assets/notify2.png" >
-</p>
 
 
 ## 问题
@@ -51,10 +48,6 @@ Kotlin + Room + Flow + 协程
 ## 计划
 
 继续优化此框架。
-
-增加文件下载完成可以打开文件功能。
-
-增加状态栏通知下载进度功能。
 
 
 
