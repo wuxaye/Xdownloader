@@ -61,10 +61,11 @@ class DataChanger private constructor(private val context: Context) {
 
             withContext(Dispatchers.IO) {
                 downloadDao.insertOrUpdate(entry)
-                Trace.d("postStatus insertOrUpdateentry : $entry")
+                Trace.i("DataChanger postStatus insertOrUpdateentry : $entry")
             }
 
-            if (entry.currentLength == entry.totalLength) {
+            // + entry.totalLength != 0 ,因为等待中的任务，currentLength 和 totalLength 都是 0 ，所以不能判断下载完成！
+            if (entry.currentLength == entry.totalLength && entry.totalLength != 0) {
                 //下载完 删除数据库中的记录
                 withContext(Dispatchers.IO) {
                     //由于外部传来的entry 不带pid,所以需要从数据库中查询
@@ -73,7 +74,7 @@ class DataChanger private constructor(private val context: Context) {
 
                     operatedEntries.remove(entry.key)
 
-                    Trace.d("postStatus COMPLETED realEntry url : ${realEntry?.url} delete : $delete")
+                    Trace.i("DataChanger postStatus COMPLETED realEntry url : ${realEntry?.url} delete : $delete")
                 }
             }
 

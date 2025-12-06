@@ -10,7 +10,6 @@ import com.xaye.downloader.databinding.ActivityMainBinding
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.listener.DownLoadListener
-import com.xaye.downloader.notification.DownloadNotificationManager
 import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -21,7 +21,7 @@ object DownloadConfig {
     private var downloadDir: String? = null
 
     //最小操作间隔即通知进度更新间隔
-    private var min_operate_interval = 500L
+    private var min_operate_interval = 1000L
 
     //在应用启动时是否自动恢复下载
     private var recoverDownloadWhenStart = false

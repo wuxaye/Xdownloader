@@ -50,7 +50,7 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
 
                 when(item.status) {
                     DownloadStatus.IDLE -> {
-
+                        itemMore.waitDownload()
                     }
                     DownloadStatus.DOWNLOADING -> {
                         itemMore.resume()
@@ -69,7 +69,7 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
                     }
                     DownloadStatus.COMPLETED -> {
                         itemMore.visibility = View.GONE
-                        itemMore.pause()
+                        itemMore.reset()
 
                         if (item.currentLength == 0) {
                             itemSize.visibility = View.GONE
@@ -77,24 +77,25 @@ class ListAdapter(datas: MutableList<DownloadEntry>) :
                     }
                     DownloadStatus.FAILED -> {
                         itemMore.visibility = View.VISIBLE
-                        itemMore.pause()
+                        itemMore.reset()
                     }
                     DownloadStatus.CANCELLED -> {
                         itemMore.visibility = View.VISIBLE
-                        itemMore.pause()
+                        itemMore.reset()
                     }
                     DownloadStatus.WAITING -> {
                         itemMore.visibility = View.VISIBLE
-                        itemMore.pause()
+                        itemMore.waitDownload()
                     }
                     DownloadStatus.ERROR -> {
                         itemSize.text = ""
                         itemMore.visibility = View.VISIBLE
-                        itemMore.pause()
+                        itemMore.reset()
                     }
                     DownloadStatus.CONNECTING -> {
                         itemMore.visibility = View.VISIBLE
-                        itemMore.pause()
+                        //itemMore.pause()
+                        itemMore.startAnimating()
                     }
                 }
 

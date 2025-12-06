@@ -94,7 +94,7 @@ class ListActivity : AppCompatActivity() {
                     adapter.notifyItemInserted(mDownloadEntries.size - 1)
                 }
             }
-            Trace.e(data.toString())
+            //Trace.e(data.toString())
         }
     }
 }

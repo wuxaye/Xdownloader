@@ -2,6 +2,7 @@ package com.xaye.downloader.core
 
 import android.content.Context
 import android.os.Handler
+import android.os.Looper
 import android.os.Message
 import com.xaye.downloader.DownloadConfig
 import com.xaye.downloader.R
@@ -9,8 +10,6 @@ import com.xaye.downloader.db.DownloadDatabase
 import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.network.DownloadException
-import com.xaye.downloader.network.ExceptionHandle
-import com.xaye.downloader.notification.DownloadNotificationManager
 import com.xaye.downloader.utils.TextUtil
 import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
@@ -45,16 +44,18 @@ class DownloaderTask(
 
     private val taskScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private var downloadNotificationManager: DownloadNotificationManager? = null
-
-
     /*
     *暂停下载
     * */
     fun pause() {
-        Trace.d("download paused")
+        Trace.d("${entry.fileName} download paused")
         isPaused = true //标记为暂停
         connectThread?.takeIf { it.isRunning }?.cancel() //如果连接线程正在运行，则取消
+
+        // 不要等待线程真正停止（那需要时间），在调用 pause() 方法的瞬间，强制更新通知状态。因为用户点击暂停时，从交互上讲它就是“暂停”了。
+        entry.status = DownloadStatus.PAUSED
+        notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
+
         downloadThreads?.filterNotNull()?.filter { it.isRunning() }?.let { //如果下载线程正在运行，则暂停或取消
             if (entry.isSupportRange) { //如果服务器支持断点续传，则暂停
                 it.forEach { thread -> thread.pause() }
@@ -68,9 +69,15 @@ class DownloaderTask(
     *取消下载
     * */
     fun cancel() {
-        Trace.d("download cancelled")
+        Trace.d("${entry.fileName} download cancelled")
         isCancelled = true //标记为取消
         connectThread?.takeIf { it.isRunning }?.cancel() //如果连接线程正在运行，则取消
+
+        // 不要等待线程真正停止（那需要时间），在调用 cancel() 方法的瞬间，强制更新通知状态。因为用户点击取消时，从交互上讲它就是“取消”了。
+        entry.status = DownloadStatus.CANCELLED
+        entry.reset()
+        notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
+
         downloadThreads?.filterNotNull()?.filter { it.isRunning() }
             ?.forEach { it.cancel() } //如果下载线程正在运行，则取消
     }
@@ -79,18 +86,6 @@ class DownloaderTask(
     *开始下载
     * */
     fun start() {
-        if (downloadNotificationManager == null) {
-            downloadNotificationManager = DownloadNotificationManager(
-                context = context,
-                notificationChannelName = "文件下载",
-                notificationChannelDescription = "通知文件下载状态",
-                notificationImportance = 4,
-                requestId = entry.uniqueId,
-                notificationSmallIcon = R.drawable.ic_launcher_foreground,
-                fileName = entry.key
-            )
-        }
-
         taskScope.launch {
             if (isDownloadCompleted(entry) && !entry.reDownload) {
                 entry.status = DownloadStatus.COMPLETED
@@ -125,7 +120,7 @@ class DownloaderTask(
             } else {
                 downloadEntry?.currentLength ?: 0L
             }
-            Trace.e("isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}}")
+            Trace.e("判断文件是否下载完成 isDownloadCompleted file.exists() = ${file.exists()}, file = ${file.absolutePath} downloadEntry is null = ${downloadEntry == null}, currentLength = ${downloadEntry?.currentLength}}")
 
 
             file.exists() && currentLength == 0L
@@ -183,7 +178,7 @@ class DownloaderTask(
     *开始多线程下载, 并且初始化下载线程状态为下载中
     * */
     private fun startMultiDownload() {
-        Trace.d("start multi download")
+        Trace.d("${entry.fileName} start multi download")
 
         // Task initialization
         entry.status = DownloadStatus.DOWNLOADING
@@ -265,11 +260,6 @@ class DownloaderTask(
 
             lastStamp = stamp
             notifyUpdate(entry, DownloaderService.NOTIFY_UPDATING)
-            downloadNotificationManager?.sendUpdateNotification(
-                entry.percent,
-                speed,
-                entry.totalLength.toLong()
-            )
         }
     }
 
@@ -278,22 +268,21 @@ class DownloaderTask(
     * */
     @Synchronized
     override fun onDownloadCompleted(index: Int) {
-        Trace.d("onDownloadCompleted index = $index")
+        Trace.d("${entry.fileName} onDownloadCompleted 线程-$index, 下载完成")
 
         downloadStatus[index] = DownloadStatus.COMPLETED
 
         if (downloadStatus.all { it == DownloadStatus.COMPLETED }) {
-            //Trace.e(" onDownloadCompleted  entry.getCurrentLength() = " + entry.currentLength + " , entry.getTotalLength()" + entry.totalLength)
             //异常情况，直接删除文件
             if (entry.totalLength > 0 && entry.currentLength != entry.totalLength) {
                 entry.status = DownloadStatus.ERROR
                 entry.reset()
                 notifyUpdate(entry, DownloaderService.NOTIFY_ERROR)
-                downloadNotificationManager?.sendDownloadFailedNotification()
+
             } else {
                 entry.status = DownloadStatus.COMPLETED
                 notifyUpdate(entry, DownloaderService.NOTIFY_COMPLETED)
-                downloadNotificationManager?.sendDownloadSuccessNotification(TextUtil.getTotalLengthText(entry.totalLength.toLong()))
+                Trace.i("${entry.fileName} notifyUpdate -> NOTIFY_COMPLETED")
             }
         }
 
@@ -320,17 +309,19 @@ class DownloaderTask(
 
     /*
     *下载暂停的回调
+    *
+    * todo 不要等待线程真正停止（那需要时间），在调用 pause() 方法的瞬间，强制更新通知状态。因为用户点击暂停时，从交互上讲它就是“暂停”了。
     * */
     @Synchronized
     override fun onDownloadPaused(index: Int) {
-        Trace.d("onDownloadPaused index = $index")
+        Trace.i("${entry.fileName} onDownloadPaused 线程-$index 取消")
 
         downloadStatus[index] = DownloadStatus.PAUSED
 
         if (downloadStatus.all { it == DownloadStatus.PAUSED || it == DownloadStatus.COMPLETED }) {
-            entry.status = DownloadStatus.PAUSED
-            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
-            downloadNotificationManager?.sendDownloadPausedNotification()
+//            entry.status = DownloadStatus.PAUSED
+//            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
+            Trace.i("${entry.fileName} onDownloadPaused 全部线程已取消")
         }
     }
 
@@ -339,16 +330,17 @@ class DownloaderTask(
     * */
     @Synchronized
     override fun onDownloadCancelled(index: Int) {
-        Trace.d("onDownloadCancelled index = $index")
+        Trace.d("${entry.fileName} onDownloadCancelled 线程-$index 取消")
 
         downloadStatus[index] = DownloadStatus.CANCELLED
 
         if (downloadStatus.all { it == DownloadStatus.CANCELLED || it == DownloadStatus.COMPLETED }) {
-            entry.status = DownloadStatus.CANCELLED
-            entry.reset()
+//            entry.status = DownloadStatus.CANCELLED
+//            entry.reset()
+//
+//            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
 
-            notifyUpdate(entry, DownloaderService.NOTIFY_PAUSED_OR_CANCELED)
-            downloadNotificationManager?.sendDownloadCancelledNotification()
+            Trace.i("${entry.fileName} onDownloadCancelled 全部线程已取消")
         }
     }
 

@@ -13,6 +13,7 @@ import com.xaye.downloader.entities.DownloadEntry
 import com.xaye.downloader.entities.DownloadStatus
 import com.xaye.downloader.notify.DataChanger
 import com.xaye.downloader.utils.Constants
+import com.xaye.downloader.utils.Trace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -148,9 +149,13 @@ class DownloaderService : Service() {
     }
 
     //恢复所有下载
+    // todo 问题：之前处于等待状态的，恢复下载后变成了暂停状态！
     private fun recoverAll() {
         val mRecoverableEntries =
             DataChanger.getInstance(applicationContext).queryAllRecoverableEntries()
+        mRecoverableEntries.forEach { it ->
+            Trace.d("recoverable entry: ${it.fileName} status -> ${it.status}")
+        }
         mRecoverableEntries.let {
             for (downloadEntry in it) {
                 addDownload(downloadEntry)
